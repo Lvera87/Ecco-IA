@@ -32,17 +32,15 @@ export const useEnergyMath = () => {
 
         // Vampire & Inefficiency costs
         let vampireKwhMonthly = 0;
-        let inefficiencyCostMonthly = 0;
-
-        if (details.fridge_check) vampireKwhMonthly += 15; // Rough estimate for old fridge overconsumed kWh
-        if (details.tv_check) vampireKwhMonthly += 5; // Standby devices
+        if (details.fridge_check) vampireKwhMonthly += 15;
+        if (details.tv_check) vampireKwhMonthly += 5;
         if (config.appliances?.includes('bulbs_old')) vampireKwhMonthly += 10;
 
         const vampireMoneyLost = vampireKwhMonthly * kwhPrice;
 
         // Carbon Footprint
-        const currentMonthlyCO2 = projectedKwh * CO2_FACTOR;
-        const treesEquivalent = Math.round(currentMonthlyCO2 / 20);
+        const co2Footprint = projectedKwh * CO2_FACTOR;
+        const treesEquivalent = Math.round(co2Footprint / 20);
 
         return {
             latestReading,
@@ -50,10 +48,8 @@ export const useEnergyMath = () => {
             projectedBill,
             vampireKwhMonthly,
             vampireMoneyLost,
-            currentMonthlyCO2,
+            co2Footprint,
             treesEquivalent,
-            kwhPrice,
-            userStratum,
             hasData: consumptionHistory.length > 0,
             hasProfile: !!config.stratum
         };
@@ -62,21 +58,21 @@ export const useEnergyMath = () => {
     // Enriched appliances with financial data
     const enrichedAppliances = useMemo(() => {
         return appliances.map(app => {
-            let expertStatus = 'normal';
+            let expertStatus = 'Excellent';
             let warning = null;
             let monthlyCost = app.consumption * 30 * kwhPrice;
 
             if (app.icon === 'Refrigerator' && details.fridge_check) {
-                expertStatus = 'intensive';
+                expertStatus = 'Warning';
                 warning = "Equipo ineficiente (+10 años)";
                 monthlyCost *= 1.4;
             }
             if ((app.icon === 'Tv' || app.icon === 'Monitor') && details.tv_check) {
-                expertStatus = 'intensive';
+                expertStatus = 'Warning';
                 warning = "Consumo vampiro detectado";
             }
             if (app.icon === 'Lightbulb' && config.appliances?.includes('bulbs_old')) {
-                expertStatus = 'intensive';
+                expertStatus = 'Warning';
                 warning = "Bombillos tradicionales";
             }
 
@@ -84,10 +80,21 @@ export const useEnergyMath = () => {
         });
     }, [appliances, kwhPrice, details, config.appliances]);
 
+    // Totals from appliances
+    const totals = useMemo(() => {
+        const totalNominalKwh = appliances.reduce((sum, app) => sum + (app.consumption || 0), 0);
+        const totalMonthlyCost = enrichedAppliances.reduce((sum, app) => sum + (app.monthlyCost || 0), 0);
+        return { totalNominalKwh, totalMonthlyCost };
+    }, [appliances, enrichedAppliances]);
+
     return {
         ...calculations,
+        ...totals,
         enrichedAppliances,
         formatMoney,
+        kwhPrice,
+        userStratum,
         CO2_FACTOR
     };
 };
+
