@@ -41,7 +41,7 @@ const Dashboard = () => {
 
   const {
     latestReading, projectedKwh, projectedBill, vampireMoneyLost,
-    currentMonthlyCO2, treesEquivalent, kwhPrice, userStratum,
+    co2Footprint, treesEquivalent, kwhPrice, userStratum,
     hasData, hasProfile, formatMoney, enrichedAppliances
   } = useEnergyMath();
 
