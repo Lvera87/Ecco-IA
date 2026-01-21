@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EccoIA: Misiones y Gamificación Unificada</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1d81c9",
+                        "primary-dark": "#16649c",
+                        "background-light": "#f8fafc",
+                        "sidebar-bg": "#0f172a",
+                        "success": "#2CBF56",
+                        "warning": "#f59e0b",
+                        "danger": "#ef4444",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            .material-symbols-outlined {
+                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            }
+            .sidebar-item-active {
+                @apply bg-primary text-white;
+            }
+            .sidebar-item {
+                @apply flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-200;
+            }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light font-display text-slate-900 antialiased h-screen overflow-hidden flex">
+<aside class="w-72 bg-sidebar-bg h-full flex flex-col p-6 text-white shrink-0">
+<div class="flex items-center gap-2 mb-10 px-2">
+<span class="material-symbols-outlined text-primary text-3xl font-bold">eco</span>
+<h1 class="text-2xl font-extrabold tracking-tight">EccoIA</h1>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-semibold text-sm">Panel de Control</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-semibold text-sm">Facturación</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">kitchen</span>
+<span class="font-semibold text-sm">Electrodomésticos</span>
+</a>
+<a class="sidebar-item sidebar-item-active" href="#">
+<span class="material-symbols-outlined">military_tech</span>
+<span class="font-semibold text-sm">Misiones</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-semibold text-sm">Análisis</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">co2</span>
+<span class="font-semibold text-sm">Huella de Carbono</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-white/10">
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-semibold text-sm">Configuración</span>
+</a>
+<a class="sidebar-item text-danger hover:bg-danger/10" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-semibold text-sm">Cerrar Sesión</span>
+</a>
+</div>
+</aside>
+<div class="flex-1 flex flex-col overflow-hidden">
+<header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="size-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+<span class="material-symbols-outlined text-primary text-2xl">person</span>
+</div>
+<div class="absolute -bottom-1 -right-1 size-5 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white">
+                            12
+                        </div>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-bold text-slate-800">Eco-Explorador</h2>
+<span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded uppercase">Nivel 12</span>
+</div>
+<div class="w-48 h-1.5 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
+<div class="w-[70%] h-full bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm">monitoring</span>
+                    Seguir Consumo
+                </button>
+<button class="p-2 text-slate-400 hover:bg-slate-50 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto p-8 bg-background-light">
+<div class="mb-8 bg-primary rounded-2xl p-6 text-white flex items-center justify-between shadow-xl shadow-primary/10 relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="text-2xl font-black mb-1">¡Vas por buen camino!</h3>
+<p class="text-primary-100 opacity-90 font-medium">Tienes 3 misiones disponibles para hoy.</p>
+</div>
+<div class="relative z-10 hidden md:block">
+<span class="material-symbols-outlined text-6xl opacity-30">verified_user</span>
+</div>
+<div class="absolute top-0 right-0 size-40 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+</div>
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<div class="flex items-center justify-between">
+<h4 class="text-xl font-bold text-slate-800">Misiones Diarias</h4>
+<span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Hoy, 15 de Mayo</span>
+</div>
+<div class="space-y-4">
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex items-center justify-between hover:border-primary/30 transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-full bg-blue-50 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">power_off</span>
+</div>
+<div>
+<h5 class="font-bold text-slate-800">Apagado Fantasma</h5>
+<p class="text-xs text-slate-500">Desconecta los dispositivos en standby antes de dormir.</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<span class="font-bold text-primary">+50 XP</span>
+<div class="size-6 rounded-full border-2 border-primary flex items-center justify-center">
+<div class="size-3 bg-transparent rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex items-center justify-between hover:border-primary/30 transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-full bg-blue-50 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">local_laundry_service</span>
+</div>
+<div>
+<h5 class="font-bold text-slate-800">Lavado Eco</h5>
+<p class="text-xs text-slate-500">Utiliza el programa ECO en tu lavadora o lavavajillas.</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<span class="font-bold text-primary">+30 XP</span>
+<div class="size-6 rounded-full border-2 border-primary flex items-center justify-center">
+<div class="size-3 bg-transparent rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex items-center justify-between border-l-4 border-l-success">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-full bg-success/10 flex items-center justify-center text-success">
+<span class="material-symbols-outlined">lightbulb_circle</span>
+</div>
+<div>
+<h5 class="font-bold text-slate-800">Menos es Más</h5>
+<p class="text-xs text-slate-500">Mantén las luces apagadas en habitaciones vacías por 2 horas.</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<span class="font-bold text-success">COMPLETADA</span>
+<div class="size-6 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm">check</span>
+</div>
+</div>
+</div>
+<div class="bg-slate-50 rounded-2xl p-6 border border-dashed border-slate-300 flex items-center justify-between opacity-60">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined">lock</span>
+</div>
+<div>
+<h5 class="font-bold text-slate-500">Misión Bonus Mañana</h5>
+<p class="text-xs text-slate-400">Desbloquéala completando tus retos de hoy.</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<span class="font-bold text-slate-400">+100 XP</span>
+<div class="size-6 rounded-full border-2 border-slate-300"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-4 space-y-8">
+<section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+<h4 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                            Tu Progreso
+                        </h4>
+<div class="flex flex-col items-center py-4 bg-slate-50 rounded-2xl border border-slate-100 mb-6">
+<div class="relative flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<p class="text-3xl font-black text-slate-800">5 Días</p>
+<p class="text-xs font-bold text-slate-400 uppercase tracking-tighter mt-1">Racha Actual</p>
+</div>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-slate-500">XP para Nivel 13</span>
+<span class="text-primary">850 / 1200</span>
+</div>
+<div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+<div class="w-[70%] h-full bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+<div class="flex items-center justify-between mb-6">
+<h4 class="font-bold text-slate-800 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">workspace_premium</span>
+                                Galería de Insignias
+                            </h4>
+<button class="text-[10px] font-black text-primary hover:underline uppercase">Ver todas</button>
+</div>
+<div class="grid grid-cols-3 gap-4">
+<div class="flex flex-col items-center gap-2">
+<div class="size-16 rounded-full bg-amber-50 border-2 border-amber-100 flex items-center justify-center shadow-inner group cursor-help" title="Iniciador Eco">
+<span class="material-symbols-outlined text-amber-500 text-3xl" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+</div>
+<span class="text-[10px] font-bold text-slate-500 text-center">Iniciador Eco</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="size-16 rounded-full bg-blue-50 border-2 border-blue-100 flex items-center justify-center shadow-inner group cursor-help" title="Ahorrador Experto">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">savings</span>
+</div>
+<span class="text-[10px] font-bold text-slate-500 text-center">Ahorrador Experto</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="size-16 rounded-full bg-emerald-50 border-2 border-emerald-100 flex items-center justify-center shadow-inner group cursor-help" title="Eco-Guardián">
+<span class="material-symbols-outlined text-emerald-500 text-3xl" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+</div>
+<span class="text-[10px] font-bold text-slate-500 text-center">Eco-Guardián</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="size-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center grayscale opacity-50">
+<span class="material-symbols-outlined text-slate-400 text-3xl">electric_bolt</span>
+</div>
+<span class="text-[10px] font-bold text-slate-400 text-center">Voltio-Master</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="size-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center grayscale opacity-50">
+<span class="material-symbols-outlined text-slate-400 text-3xl">nature</span>
+</div>
+<span class="text-[10px] font-bold text-slate-400 text-center">Carbono Zero</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="size-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-200 flex items-center justify-center grayscale opacity-50">
+<span class="material-symbols-outlined text-slate-400 text-3xl">groups</span>
+</div>
+<span class="text-[10px] font-bold text-slate-400 text-center">Comunidad</span>
+</div>
+</div>
+</section>
+<div class="bg-primary/5 border border-primary/20 rounded-2xl p-5">
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-primary">lightbulb</span>
+<div>
+<p class="text-sm font-bold text-slate-800">Sabías que...</p>
+<p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                    Mantener tu racha de 7 días te otorga un <strong>Multiplicador de XP x2</strong> durante el fin de semana.
+                                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

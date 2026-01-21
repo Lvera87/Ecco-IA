@@ -5,11 +5,11 @@ import IndustrialHeader from './IndustrialHeader';
 
 const IndustrialLayout = ({ children }) => {
   return (
-    <div className="flex bg-background-light">
+    <div className="flex bg-slate-950 min-h-screen">
       <IndustrialSidebar />
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col">
         <IndustrialHeader />
-        <main className="p-8 max-w-[1600px] mx-auto w-full">
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

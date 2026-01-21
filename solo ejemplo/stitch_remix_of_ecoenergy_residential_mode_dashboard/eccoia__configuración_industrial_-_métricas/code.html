@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EccoIA - Configuración Industrial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1E40AF",
+                        "primary-hover": "#1e3a8a",
+                        "slate-gray": "#475569",
+                        "background-light": "#ffffff",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            @apply bg-primary;
+        }
+        .toggle-checkbox:checked + .toggle-label .toggle-dot {
+            transform: translateX(100%);
+        }
+    </style>
+</head>
+<body class="bg-background-light text-slate-gray transition-colors duration-200">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-100 px-6 md:px-20 py-4 bg-white sticky top-0 z-50">
+<div class="flex items-center gap-3 text-primary">
+<div class="size-8">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-[#0f172a] text-xl font-extrabold leading-tight tracking-tight">EccoIA</h2>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-slate-gray text-sm font-semibold hover:text-primary transition-colors" href="#">Panel Control</a>
+<a class="text-slate-gray text-sm font-semibold hover:text-primary transition-colors" href="#">Activos</a>
+<a class="text-slate-gray text-sm font-semibold hover:text-primary transition-colors" href="#">Soporte</a>
+</nav>
+<div class="h-10 w-10 rounded-full border-2 border-primary/20 bg-center bg-no-repeat bg-cover shadow-sm" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDANkUiTciJqplKnn_o8XKKf8o2MrI3QukkHaQbu1dANW6CCBvQnGlxfjIDW3LyD8BYSCWyytAeNreZTkG4qHti87J_GPGc8UqJBQDppoX0tXd8x9PR7r88irF99eq9-LnKIZw10m2LBdz_gSC_ecqYpLC5bB4nvnJeFkU8PCJj5yxE3Hrr1zWorig_dbY0WBMSEjJAdAG9ETWhFRZ_zXPhgUHfh9zNqIlwyPUZPaU1vgmBvU1ClzkJ2TSvs3YBeb2xA9D6lRUsbIP4");'></div>
+</div>
+</header>
+<main class="flex-1 flex justify-center py-10 px-4 md:px-10">
+<div class="w-full max-w-4xl flex flex-col gap-8">
+<div class="flex flex-col gap-4 bg-primary/5 p-6 rounded-xl border border-primary/10">
+<div class="flex gap-6 justify-between items-end">
+<div class="flex flex-col">
+<span class="text-primary text-xs font-bold uppercase tracking-widest mb-1">Configuración Final</span>
+<h3 class="text-[#0f172a] text-lg font-bold">Paso 2 de 2: Métricas de Planta</h3>
+</div>
+<p class="text-primary text-2xl font-black leading-none">100%</p>
+</div>
+<div class="w-full h-3 rounded-full bg-gray-200 overflow-hidden">
+<div class="h-full rounded-full bg-primary" style="width: 100%;"></div>
+</div>
+<div class="flex items-center gap-2 text-primary font-medium text-sm">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                        Perfil industrial completado
+                    </div>
+</div>
+<div class="bg-white border border-gray-100 rounded-2xl shadow-xl shadow-gray-200/50 overflow-hidden">
+<div class="p-8 border-b border-gray-50">
+<h1 class="text-[#0f172a] text-3xl font-extrabold tracking-tight">Métricas Operativas</h1>
+<p class="text-slate-gray/80 mt-2">Defina los parámetros clave para el análisis de eficiencia energética por IA.</p>
+</div>
+<div class="p-8 space-y-10">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="flex flex-col gap-2">
+<label class="text-[#0f172a] text-sm font-bold uppercase tracking-wide">Consumo Mensual Promedio (kWh)</label>
+<div class="relative group">
+<input class="w-full h-14 rounded-lg border border-gray-200 bg-gray-50/50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all px-4 pr-16 text-lg font-semibold text-[#0f172a]" placeholder="Ej. 15000" type="number"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-gray/50 font-bold pointer-events-none">kWh</div>
+</div>
+<p class="text-xs text-slate-gray/60">Basado en su última factura de suministro.</p>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-[#0f172a] text-sm font-bold uppercase tracking-wide">Área Operativa Total (m²)</label>
+<div class="relative group">
+<input class="w-full h-14 rounded-lg border border-gray-200 bg-gray-50/50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all px-4 pr-16 text-lg font-semibold text-[#0f172a]" placeholder="Ej. 500" type="number"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-gray/50 font-bold pointer-events-none">m²</div>
+</div>
+<p class="text-xs text-slate-gray/60">Incluyendo áreas de producción y almacén.</p>
+</div>
+<div class="flex flex-col gap-2 md:col-span-2">
+<label class="text-[#0f172a] text-sm font-bold uppercase tracking-wide">Número de Turnos de Trabajo</label>
+<div class="flex flex-wrap gap-4 mt-1">
+<button class="flex-1 min-w-[100px] h-14 border-2 border-primary bg-primary/5 text-primary rounded-xl font-bold flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">sunny</span> 1 Turno
+                                    </button>
+<button class="flex-1 min-w-[100px] h-14 border border-gray-200 hover:border-primary/50 text-slate-gray rounded-xl font-bold flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">schedule</span> 2 Turnos
+                                    </button>
+<button class="flex-1 min-w-[100px] h-14 border border-gray-200 hover:border-primary/50 text-slate-gray rounded-xl font-bold flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">nights_stay</span> 3 Turnos (24/7)
+                                    </button>
+</div>
+</div>
+</div>
+<div class="pt-6">
+<h4 class="text-[#0f172a] text-lg font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">bolt</span>
+                                Principales Cargas Energéticas
+                            </h4>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/30">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+</div>
+<span class="font-bold text-[#0f172a]">Maquinaria Pesada</span>
+</div>
+<div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 checked:right-0 right-6 outline-none transition-all duration-200" id="toggle1" name="heavy_machinery" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer" for="toggle1"></label>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/30">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined">hvac</span>
+</div>
+<span class="font-bold text-[#0f172a]">HVAC (Climatización)</span>
+</div>
+<div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 checked:right-0 right-6 outline-none transition-all duration-200" id="toggle2" name="hvac" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer" for="toggle2"></label>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/30">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined">lightbulb</span>
+</div>
+<span class="font-bold text-[#0f172a]">Iluminación Industrial</span>
+</div>
+<div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 checked:right-0 right-6 outline-none transition-all duration-200" id="toggle3" name="lighting" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer" for="toggle3"></label>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/30">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined">ac_unit</span>
+</div>
+<span class="font-bold text-[#0f172a]">Refrigeración a gran escala</span>
+</div>
+<div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 checked:right-0 right-6 outline-none transition-all duration-200" id="toggle4" name="cooling" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer" for="toggle4"></label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-8 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between">
+<button class="flex items-center gap-2 text-slate-gray font-bold hover:text-[#0f172a] transition-colors order-2 sm:order-1">
+<span class="material-symbols-outlined">arrow_back</span>
+                            Volver al Paso 1
+                        </button>
+<button class="group w-full sm:w-auto min-w-[240px] bg-primary hover:bg-primary-hover text-white h-16 rounded-xl flex items-center justify-center gap-3 font-extrabold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] order-1 sm:order-2">
+<span class="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"></span>
+                            Analizar ahora
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">insights</span>
+</button>
+</div>
+</div>
+<div class="flex gap-4 p-5 rounded-xl bg-blue-50/50 border border-blue-100">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="text-sm text-primary leading-relaxed">
+<strong>Nota técnica:</strong> EccoIA utiliza modelos de visión por computadora para mapear la densidad de carga térmica basada en el área operativa y los turnos seleccionados.
+                    </p>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+</body></html>

@@ -22,13 +22,18 @@ const Layout = ({ children }) => {
     '/missions',
     '/energy-analysis',
     '/carbon-footprint',
+    '/profile',
   ];
 
-  if (industrialRoutes.some(route => pathname.startsWith(route))) {
+  const isMatch = (routes) => {
+    return routes.some(route => pathname === route || pathname.startsWith(`${route}/`));
+  };
+
+  if (isMatch(industrialRoutes)) {
     return <IndustrialLayout>{children}</IndustrialLayout>;
   }
 
-  if (residentialRoutes.some(route => pathname.startsWith(route))) {
+  if (isMatch(residentialRoutes)) {
     return <ResidentialLayout>{children}</ResidentialLayout>;
   }
 
