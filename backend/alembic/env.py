@@ -1,5 +1,10 @@
 from logging.config import fileConfig
 import asyncio
+import sys
+import os
+
+# Add the project root to python path to allow importing app
+sys.path.append(os.getcwd())
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -8,7 +13,7 @@ from alembic import context
 
 from app.core.config import get_settings
 from app.db.base import Base
-from app.db.session import engine
+from app.db.session import get_async_engine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -49,7 +54,7 @@ def do_run_migrations(connection):
 
 def run_migrations_online():
     '''Run migrations in 'online' mode.'''
-    connectable = engine
+    connectable = get_async_engine()
 
     if isinstance(connectable, AsyncEngine):
         async def async_main():
