@@ -1,19 +1,40 @@
+import { useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import IndustrialLayout from './IndustrialLayout';
+import ResidentialLayout from './ResidentialLayout';
 
-function Layout({ children }) {
-  return (
-    <div className="layout">
-      <header className="layout__header">
-        <h1>FastAPI + React Boilerplate</h1>
-        <p>Stack listo para desarrollar aplicaciones modernas.</p>
-      </header>
-      <main className="layout__content">{children}</main>
-      <footer className="layout__footer">
-        <small>&copy; {new Date().getFullYear()} FastAPI + React Boilerplate</small>
-      </footer>
-    </div>
-  );
-}
+const Layout = ({ children }) => {
+  const location = useLocation();
+  const { pathname } = location;
+
+  const industrialRoutes = [
+    '/industrial-dashboard',
+    '/global-consumption',
+    '/carbon-footprint-industrial',
+    '/industrial-settings',
+    '/industrial-config',
+  ];
+
+  const residentialRoutes = [
+    '/dashboard',
+    '/financial-impact',
+    '/appliances',
+    '/missions',
+    '/energy-analysis',
+    '/carbon-footprint',
+  ];
+
+  if (industrialRoutes.some(route => pathname.startsWith(route))) {
+    return <IndustrialLayout>{children}</IndustrialLayout>;
+  }
+
+  if (residentialRoutes.some(route => pathname.startsWith(route))) {
+    return <ResidentialLayout>{children}</ResidentialLayout>;
+  }
+
+  // Default layout for pages without a sidebar/header
+  return <>{children}</>;
+};
 
 Layout.propTypes = {
   children: PropTypes.node.isRequired,
