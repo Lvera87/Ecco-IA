@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EccoIA Ind: Distribución Global de Consumo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #0f172a;
+            --primary: #3b82f6;
+            --background-light: #f8fafc;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--background-light);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3b82f6",
+                        "sidebar": "#0f172a",
+                        "background-light": "#f8fafc",
+                    },
+                    borderRadius: {
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light text-slate-900 min-h-screen flex">
+<aside class="w-64 bg-sidebar min-h-screen flex flex-col fixed inset-y-0 left-0 z-50">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-10">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-xl">factory</span>
+</div>
+<h1 class="text-xl font-extrabold tracking-tight text-white uppercase">ECCOIA <span class="text-primary">IND.</span></h1>
+</div>
+<nav class="space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 text-white bg-white/10 rounded-xl font-semibold transition-all group" href="#">
+<span class="material-symbols-outlined text-primary">bar_chart</span>
+                    Analíticas
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">eco</span>
+                    Huella de Carbono
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+                    Ajustes
+                </a>
+</nav>
+</div>
+<div class="mt-auto p-6">
+<div class="bg-white/5 rounded-2xl p-4 border border-white/10">
+<p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Soporte Técnico</p>
+<p class="text-xs text-slate-300 mb-3 leading-relaxed">¿Necesitas ayuda con el monitoreo industrial?</p>
+<button class="w-full py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition-colors">Contactar</button>
+</div>
+</div>
+</aside>
+<div class="flex-1 ml-64 flex flex-col min-h-screen">
+<header class="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 sticky top-0 z-40">
+<div class="flex items-center gap-4">
+<button class="bg-primary text-white px-6 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 hover:bg-blue-600 shadow-lg shadow-primary/20 transition-all">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+                    Nueva Auditoría
+                </button>
+</div>
+<div class="flex items-center gap-8">
+<div class="hidden lg:flex flex-col items-end gap-1.5">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Eficiencia de Red</span>
+<span class="text-xs font-extrabold text-primary">84%</span>
+</div>
+<div class="w-40 h-2 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[84%] transition-all duration-1000"></div>
+</div>
+</div>
+<div class="h-8 w-px bg-slate-100"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-sm font-bold text-slate-900 leading-none">Administrador Planta</p>
+<p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-1.5">Gerente de Energía</p>
+</div>
+<div class="size-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBMjWf-W2ggfmZPhKpkZ5d8d3H5ZjKJPeuj7A5P2UFG46l1BZJWH8Wa6LqFhIRlnrORnXODSz9_miXoRHxGXpXkBGwmrOyn8sqUIAgp6eaxkiUyyd-3XBs-gK-GcoBpccE0rkLsIkB2SAaKjw-dtflDGqVp-KFHfoNFTievbPK_UVTRQGLaIL5E7GmHxvM0ChaKs6W8ELS68ZbsQ_Im85oOnQgbLyprFzPAH1HSh7ZEBaBAjyJjs5yLAhN4rnpYeIJa4HT-kFZuLWmY'); background-size: cover;">
+</div>
+</div>
+</div>
+</header>
+<main class="p-8 max-w-[1600px] mx-auto w-full">
+<div class="mb-10">
+<h2 class="text-3xl font-extrabold tracking-tight text-slate-900">Distribución Global de Consumo</h2>
+<p class="text-slate-500 text-sm mt-1.5 font-medium">Visualización simplificada del consumo energético total por categorías globales.</p>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+<div class="bg-white p-6 rounded-2xl shadow-soft border border-slate-50">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2.5 bg-yellow-50 text-yellow-600 rounded-xl">
+<span class="material-symbols-outlined">lightbulb</span>
+</div>
+<span class="text-[10px] font-bold px-2 py-1 bg-slate-50 text-slate-500 rounded-lg">15% TOTAL</span>
+</div>
+<p class="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Iluminación</p>
+<h3 class="text-2xl font-extrabold mt-1 text-slate-900">12.4 <span class="text-sm font-semibold text-slate-400">MWh</span></h3>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-soft border border-slate-50">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+</div>
+<span class="text-[10px] font-bold px-2 py-1 bg-slate-50 text-slate-500 rounded-lg">55% TOTAL</span>
+</div>
+<p class="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Maquinaria</p>
+<h3 class="text-2xl font-extrabold mt-1 text-slate-900">45.8 <span class="text-sm font-semibold text-slate-400">MWh</span></h3>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-soft border border-slate-50">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2.5 bg-cyan-50 text-cyan-600 rounded-xl">
+<span class="material-symbols-outlined">ac_unit</span>
+</div>
+<span class="text-[10px] font-bold px-2 py-1 bg-slate-50 text-slate-500 rounded-lg">22% TOTAL</span>
+</div>
+<p class="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Refrigeración</p>
+<h3 class="text-2xl font-extrabold mt-1 text-slate-900">18.2 <span class="text-sm font-semibold text-slate-400">MWh</span></h3>
+</div>
+<div class="bg-white p-6 rounded-2xl shadow-soft border border-slate-50">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2.5 bg-slate-100 text-slate-600 rounded-xl">
+<span class="material-symbols-outlined">more_horiz</span>
+</div>
+<span class="text-[10px] font-bold px-2 py-1 bg-slate-50 text-slate-500 rounded-lg">8% TOTAL</span>
+</div>
+<p class="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Otros</p>
+<h3 class="text-2xl font-extrabold mt-1 text-slate-900">6.7 <span class="text-sm font-semibold text-slate-400">MWh</span></h3>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+<div class="lg:col-span-2 bg-white rounded-3xl shadow-soft border border-slate-50 p-8">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-12">
+<div>
+<h4 class="text-xl font-extrabold text-slate-900">Consumo Total por Categoría</h4>
+<p class="text-sm text-slate-400 font-medium">Comparativa de distribución energética en el periodo actual</p>
+</div>
+<div class="flex items-center gap-4">
+<select class="text-xs font-bold text-slate-500 border-slate-200 rounded-xl px-4 py-2 focus:ring-primary">
+<option>Últimos 30 días</option>
+<option>Este Mes</option>
+<option>Trimestre</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-center py-10">
+<div class="w-full flex items-end justify-around h-64 gap-8">
+<div class="flex flex-col items-center gap-4 w-full group">
+<div class="w-full bg-yellow-400 rounded-2xl transition-all group-hover:bg-yellow-500" style="height: 30%;"></div>
+<span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Iluminación</span>
+</div>
+<div class="flex flex-col items-center gap-4 w-full group">
+<div class="w-full bg-blue-500 rounded-2xl transition-all group-hover:bg-blue-600" style="height: 100%;"></div>
+<span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Maquinaria</span>
+</div>
+<div class="flex flex-col items-center gap-4 w-full group">
+<div class="w-full bg-cyan-400 rounded-2xl transition-all group-hover:bg-cyan-500" style="height: 45%;"></div>
+<span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Refrigeración</span>
+</div>
+<div class="flex flex-col items-center gap-4 w-full group">
+<div class="w-full bg-slate-300 rounded-2xl transition-all group-hover:bg-slate-400" style="height: 15%;"></div>
+<span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Otros</span>
+</div>
+</div>
+</div>
+<div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-slate-50 pt-8">
+<div>
+<p class="text-[10px] font-bold text-slate-400 uppercase">Tendencia</p>
+<p class="text-sm font-extrabold text-emerald-600 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_down</span> -2.4%
+                            </p>
+</div>
+<div>
+<p class="text-[10px] font-bold text-slate-400 uppercase">Consumo Pico</p>
+<p class="text-sm font-extrabold text-slate-900">Maquinaria</p>
+</div>
+<div>
+<p class="text-[10px] font-bold text-slate-400 uppercase">Eficiencia</p>
+<p class="text-sm font-extrabold text-slate-900">89.5%</p>
+</div>
+<div>
+<p class="text-[10px] font-bold text-slate-400 uppercase">Costo Estimado</p>
+<p class="text-sm font-extrabold text-slate-900">$12,450.00</p>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-3xl shadow-soft border border-slate-50 p-8">
+<h4 class="font-extrabold text-sm text-slate-900 mb-8 flex items-center gap-3 uppercase tracking-tight">
+<span class="material-symbols-outlined text-primary">pie_chart</span>
+                        Desglose de Porcentaje
+                    </h4>
+<div class="space-y-6">
+<div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="size-3 rounded-full bg-yellow-400"></div>
+<span class="text-xs font-bold text-slate-600">Iluminación</span>
+</div>
+<span class="text-xs font-extrabold text-slate-900">15.0%</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-l-4 border-blue-500">
+<div class="flex items-center gap-3">
+<div class="size-3 rounded-full bg-blue-500"></div>
+<span class="text-xs font-bold text-slate-600">Maquinaria</span>
+</div>
+<span class="text-xs font-extrabold text-slate-900">55.1%</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="size-3 rounded-full bg-cyan-400"></div>
+<span class="text-xs font-bold text-slate-600">Refrigeración</span>
+</div>
+<span class="text-xs font-extrabold text-slate-900">21.9%</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="size-3 rounded-full bg-slate-300"></div>
+<span class="text-xs font-bold text-slate-600">Otros</span>
+</div>
+<span class="text-xs font-extrabold text-slate-900">8.0%</span>
+</div>
+</div>
+<div class="mt-10 p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
+<p class="text-[11px] font-bold text-blue-600 uppercase tracking-widest mb-2">Información de Red</p>
+<p class="text-xs text-slate-600 leading-relaxed font-medium">El consumo de <span class="font-bold text-blue-600">Maquinaria</span> representa la mayor carga operativa este mes.</p>
+</div>
+</div>
+</div>
+<footer class="mt-20 pt-10 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 pb-12">
+<p class="text-xs text-slate-400 font-bold uppercase tracking-widest">© 2024 ECCOIA IND. Gestión Inteligente de Energía.</p>
+<div class="flex items-center gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+<a class="hover:text-primary transition-colors" href="#">Política de Privacidad</a>
+<a class="hover:text-primary transition-colors" href="#">Términos de Uso</a>
+<a class="hover:text-primary transition-colors" href="#">Soporte</a>
+</div>
+</footer>
+</main>
+</div>
+
+</body></html>

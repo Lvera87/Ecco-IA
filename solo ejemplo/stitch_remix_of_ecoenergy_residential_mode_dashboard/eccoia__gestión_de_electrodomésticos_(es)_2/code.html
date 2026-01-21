@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EccoIA: Impacto Financiero y Ahorros</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1d81c9",
+                        "primary-dark": "#16649c",
+                        "background-light": "#f8fafc",
+                        "sidebar-bg": "#0f172a",
+                        "success": "#2CBF56",
+                        "impact": "#0ea5e9",
+                        "warning": "#f59e0b",
+                        "danger": "#ef4444",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            .material-symbols-outlined {
+                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            }
+            .sidebar-item-active {
+                @apply bg-primary text-white;
+            }
+            .sidebar-item {
+                @apply flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-200;
+            }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light font-display text-slate-900 antialiased h-screen overflow-hidden flex">
+<aside class="w-72 bg-sidebar-bg h-full flex flex-col p-6 text-white shrink-0">
+<div class="flex items-center gap-2 mb-10 px-2">
+<span class="material-symbols-outlined text-primary text-3xl font-bold">eco</span>
+<h1 class="text-2xl font-extrabold tracking-tight">EccoIA</h1>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-semibold text-sm">Panel de Control</span>
+</a>
+<a class="sidebar-item sidebar-item-active" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-semibold text-sm">Facturación</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">kitchen</span>
+<span class="font-semibold text-sm">Electrodomésticos</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">military_tech</span>
+<span class="font-semibold text-sm">Misiones</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-semibold text-sm">Análisis</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">co2</span>
+<span class="font-semibold text-sm">Huella de Carbono</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-white/10">
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-semibold text-sm">Configuración</span>
+</a>
+<a class="sidebar-item text-danger hover:bg-danger/10" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-semibold text-sm">Cerrar Sesión</span>
+</a>
+</div>
+</aside>
+<div class="flex-1 flex flex-col overflow-hidden">
+<header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="size-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+<span class="material-symbols-outlined text-primary text-2xl">person</span>
+</div>
+<div class="absolute -bottom-1 -right-1 size-5 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white">
+                            12
+                        </div>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-bold text-slate-800">Eco-Explorador</h2>
+<span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded uppercase">Nivel 12</span>
+</div>
+<div class="w-48 h-1.5 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
+<div class="w-[70%] h-full bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-400 hover:bg-slate-50 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto p-8 bg-background-light">
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-12 lg:col-span-8 space-y-8">
+<section class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
+<div class="bg-primary/5 p-8 border-b border-dashed border-slate-200">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="text-sm font-bold text-primary uppercase tracking-widest mb-1">Factura Actual</h3>
+<p class="text-2xl font-black text-slate-800">Enero 2026</p>
+</div>
+<div class="text-right">
+<span class="px-3 py-1 bg-success/10 text-success text-xs font-bold rounded-full">PAGO PROCESADO</span>
+<p class="text-xs text-slate-400 mt-2">Emitida: 01 Ene, 2026</p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between text-sm">
+<span class="text-slate-500">Consumo de Energía (185 kWh)</span>
+<span class="font-semibold text-slate-700">$125.400</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-slate-500">Impuestos y Tasas</span>
+<span class="font-semibold text-slate-700">$18.900</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-slate-500">Subsidio Estrato</span>
+<span class="font-semibold text-slate-700">-$25.300</span>
+</div>
+<div class="p-4 bg-impact/10 border border-impact/20 rounded-2xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="size-10 bg-impact text-white rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-xl">military_tech</span>
+</div>
+<div>
+<p class="font-bold text-impact text-sm">Ahorro por Misiones</p>
+<p class="text-[10px] text-impact/80 font-medium">3 Desafíos completados con éxito</p>
+</div>
+</div>
+<span class="text-xl font-black text-impact">-$34.500</span>
+</div>
+<div class="pt-4 mt-4 border-t border-slate-200 flex justify-between items-end">
+<div>
+<p class="text-xs text-slate-400 font-bold uppercase tracking-tight">Costo Final Pagado</p>
+<p class="text-4xl font-black text-primary">$84.500</p>
+</div>
+<div class="text-right pb-1">
+<p class="text-xs text-slate-400 italic">Sin misiones habrías pagado: <span class="line-through">$119.000</span></p>
+</div>
+</div>
+</div>
+</div>
+<div class="absolute left-0 top-[48%] -ml-3 size-6 bg-background-light rounded-full border border-slate-200"></div>
+<div class="absolute right-0 top-[48%] -mr-3 size-6 bg-background-light rounded-full border border-slate-200"></div>
+</section>
+<section>
+<div class="flex items-center justify-between mb-6">
+<h4 class="font-bold text-slate-800 flex items-center gap-2 text-lg">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                                Resumen de Impacto Histórico
+                            </h4>
+<div class="flex items-center gap-2">
+<span class="size-3 bg-primary rounded-full"></span>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Costo Real</span>
+<span class="size-3 bg-impact/30 rounded-full ml-2"></span>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Sin Misiones</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="bg-white p-6 rounded-3xl border border-slate-200 hover:shadow-md transition-shadow">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-center gap-4">
+<div class="size-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-400">
+<span class="text-[10px] font-bold uppercase">Dic</span>
+<span class="text-xl font-black text-slate-700">2025</span>
+</div>
+<div>
+<p class="font-bold text-slate-800 text-lg">Costo Real: $102.500</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs text-slate-400 tracking-wide">Proyectado sin misiones: $138.200</span>
+</div>
+</div>
+</div>
+<div class="bg-success/10 px-6 py-3 rounded-2xl border border-success/20 flex flex-col items-center justify-center">
+<p class="text-[10px] font-bold text-success uppercase">Diferencia Ahorrada</p>
+<p class="text-xl font-black text-success">$35.700</p>
+</div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-3xl border border-slate-200 hover:shadow-md transition-shadow">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-center gap-4">
+<div class="size-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-400">
+<span class="text-[10px] font-bold uppercase">Nov</span>
+<span class="text-xl font-black text-slate-700">2025</span>
+</div>
+<div>
+<p class="font-bold text-slate-800 text-lg">Costo Real: $115.800</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs text-slate-400 tracking-wide">Proyectado sin misiones: $142.000</span>
+</div>
+</div>
+</div>
+<div class="bg-success/10 px-6 py-3 rounded-2xl border border-success/20 flex flex-col items-center justify-center">
+<p class="text-[10px] font-bold text-success uppercase">Diferencia Ahorrada</p>
+<p class="text-xl font-black text-success">$26.200</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<div class="col-span-12 lg:col-span-4 space-y-8">
+<section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h4 class="font-bold text-slate-800">Costo vs Ahorro</h4>
+<p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Impacto de Misiones (6m)</p>
+</div>
+<span class="material-symbols-outlined text-slate-400">equalizer</span>
+</div>
+<div class="flex items-end justify-between h-48 gap-3 px-2">
+<div class="flex-1 flex flex-col items-center gap-1">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-full bg-primary rounded-t-md h-[40%]"></div>
+<div class="w-full bg-impact/30 rounded-t-md h-[20%]"></div>
+</div>
+<span class="text-[9px] font-bold text-slate-400 uppercase">Ago</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-full bg-primary rounded-t-md h-[55%]"></div>
+<div class="w-full bg-impact/30 rounded-t-md h-[30%]"></div>
+</div>
+<span class="text-[9px] font-bold text-slate-400 uppercase">Sep</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-full bg-primary rounded-t-md h-[45%]"></div>
+<div class="w-full bg-impact/30 rounded-t-md h-[25%]"></div>
+</div>
+<span class="text-[9px] font-bold text-slate-400 uppercase">Oct</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-full bg-primary rounded-t-md h-[65%]"></div>
+<div class="w-full bg-impact/30 rounded-t-md h-[35%]"></div>
+</div>
+<span class="text-[9px] font-bold text-slate-400 uppercase">Nov</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-full bg-primary rounded-t-md h-[50%]"></div>
+<div class="w-full bg-impact/30 rounded-t-md h-[40%]"></div>
+</div>
+<span class="text-[9px] font-bold text-slate-400 uppercase">Dic</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-1">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-full bg-primary rounded-t-md h-[40%] shadow-lg shadow-primary/20"></div>
+<div class="w-full bg-impact/50 rounded-t-md h-[55%]"></div>
+</div>
+<span class="text-[9px] font-bold text-primary uppercase">Ene</span>
+</div>
+</div>
+<div class="mt-6 flex flex-col gap-2 border-t border-slate-100 pt-4">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-medium text-slate-500 italic">Total Ahorrado (Histórico)</span>
+<span class="text-sm font-bold text-success">+$165.300</span>
+</div>
+</div>
+</section>
+<section class="bg-primary rounded-3xl p-6 text-white shadow-xl shadow-primary/20">
+<div class="flex items-center gap-3 mb-6">
+<div class="size-10 bg-white/20 rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined">info</span>
+</div>
+<h4 class="font-bold">Detalle de Tarifa</h4>
+</div>
+<div class="space-y-4">
+<div class="p-3 bg-white/10 rounded-xl">
+<p class="text-[10px] text-primary-100 font-bold uppercase tracking-wider mb-1">Costo por kWh</p>
+<p class="text-xl font-black">$678.50 <span class="text-xs font-normal opacity-70">COP</span></p>
+</div>
+<div class="p-3 bg-white/10 rounded-xl">
+<p class="text-[10px] text-primary-100 font-bold uppercase tracking-wider mb-1">Tu Estrato</p>
+<div class="flex items-center justify-between">
+<p class="text-xl font-black">Estrato 2</p>
+<span class="px-2 py-0.5 bg-success/30 text-success-100 text-[10px] font-bold rounded">SUBSIDIADO</span>
+</div>
+</div>
+<div class="text-xs text-primary-100 leading-relaxed opacity-80 italic">
+                                * El valor del kWh y los subsidios son fijados por la entidad reguladora vigente.
+                            </div>
+</div>
+</section>
+<section class="bg-white rounded-3xl p-6 border border-slate-200 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-7xl rotate-12">rocket_launch</span>
+</div>
+<h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-impact">rocket_launch</span>
+                            Próximo Ahorro
+                        </h4>
+<div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Misión sugerida</p>
+<h5 class="font-black text-slate-800 mb-1 leading-tight text-lg">Optimización de Calefacción</h5>
+<p class="text-sm text-slate-500 mb-4">Ajusta tu termostato a 19°C esta semana y desbloquea un descuento extra en tu próxima factura.</p>
+<div class="flex items-center justify-between mb-4">
+<div class="flex -space-x-2">
+<div class="size-7 rounded-full bg-primary/20 border-2 border-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-primary">thermometer</span>
+</div>
+<div class="size-7 rounded-full bg-impact/20 border-2 border-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-impact">bolt</span>
+</div>
+</div>
+<span class="text-xs font-bold text-impact bg-impact/10 px-2 py-1 rounded-lg">Ahorro estimado: -$12.000</span>
+</div>
+<a class="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all" href="#">
+<span class="material-symbols-outlined text-sm">play_arrow</span>
+                                Aceptar Misión
+                            </a>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

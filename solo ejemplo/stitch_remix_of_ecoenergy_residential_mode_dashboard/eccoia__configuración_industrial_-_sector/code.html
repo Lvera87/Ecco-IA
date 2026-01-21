@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EccoIA: Configuración Industrial - Sector</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2e77e5",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111721",
+                        "slate-gray": "#637288",
+                        "border-color": "#dcdfe5"
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-card {
+            border-color: #2e77e5;
+            background-color: rgba(46, 119, 229, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111418] dark:text-white transition-colors duration-300">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Header Section -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#dcdfe5] dark:border-gray-800 bg-white dark:bg-background-dark px-6 md:px-20 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="size-8 text-primary">
+<svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z"></path>
+</svg>
+</div>
+<h1 class="text-xl font-extrabold tracking-tight">EccoIA</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+<span class="material-symbols-outlined text-lg">settings</span>
+</button>
+<button class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+<span class="material-symbols-outlined text-lg">notifications</span>
+</button>
+<div class="size-10 rounded-full border-2 border-primary overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Avatar representativo del usuario" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzRvISvzNawQB0wL7J9GcTnCfhHHYKTWsXv3b2UCwsLGcblrbdm6n3GBDTrrXmkTGwmUmXjsrJINNsjU2C6vHYtt6r11TO9lN2AXKFodkEWhLHLxibwMlI05-jpEzh_RO1wiMKhy87ze8BsZoT5PUvvU_htO03Hh2UKIQJmUWrQS7ymeixfBQCA8Nc_CZ1EJQHE_5DC0R3-IT2WZpxHZcaJhS3NSglZkAbkzA5UHiSLXO3_VjbT-yeZ3qfpikNou5MlqtAgo5pHgUQ"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col items-center py-10 px-6">
+<div class="max-w-[800px] w-full space-y-8">
+<!-- Progress Indicator -->
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-end">
+<div>
+<span class="text-primary font-bold text-sm uppercase tracking-wider">Paso 1 de 2</span>
+<p class="text-slate-gray dark:text-gray-400 text-sm">Configuración Inicial</p>
+</div>
+<p class="text-2xl font-black text-primary">50%</p>
+</div>
+<div class="h-2.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-500" style="width: 50%;"></div>
+</div>
+</div>
+<!-- Page Heading -->
+<div class="space-y-2">
+<h2 class="text-4xl font-black tracking-tight leading-tight">Configuración de Perfil Industrial</h2>
+<p class="text-slate-gray dark:text-gray-400 text-lg max-w-2xl">
+                        Personalice su experiencia definiendo el sector económico y las características de sus instalaciones principales.
+                    </p>
+</div>
+<!-- Form Section: Dropdown -->
+<div class="bg-white dark:bg-background-dark/50 border border-[#dcdfe5] dark:border-gray-800 rounded-xl p-6 shadow-sm">
+<label class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">business_center</span>
+<span class="text-[#111418] dark:text-white font-bold text-lg">Sector Económico</span>
+</div>
+<div class="relative group">
+<select class="appearance-none block w-full px-4 py-4 pr-10 text-base border-[#dcdfe5] dark:border-gray-700 bg-white dark:bg-gray-900 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all dark:text-white">
+<option disabled="" selected="" value="">Seleccione el sector de su empresa...</option>
+<option value="manufactura">🏭 Manufactura e Industria Pesada</option>
+<option value="salud">🏥 Salud y Biotecnología</option>
+<option value="comercio">🛍️ Comercio y Retail</option>
+<option value="educacion">🎓 Educación e Investigación</option>
+<option value="logistica">🚚 Logística y Transporte</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-gray">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+</label>
+</div>
+<!-- Form Section: Facility Cards -->
+<div class="space-y-4">
+<div class="flex items-center gap-2 px-1">
+<span class="material-symbols-outlined text-primary">location_city</span>
+<h3 class="text-xl font-bold">Tipo de Instalación</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Card 1 -->
+<div class="group cursor-pointer p-5 border-2 border-[#dcdfe5] dark:border-gray-800 rounded-xl hover:border-primary/50 hover:bg-white dark:hover:bg-gray-800/50 transition-all flex gap-4 bg-white dark:bg-background-dark/30">
+<div class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">factory</span>
+</div>
+<div class="space-y-1">
+<h4 class="font-bold text-lg">Planta Industrial</h4>
+<p class="text-slate-gray dark:text-gray-400 text-sm leading-relaxed">Instalaciones de producción masiva, manufactura y procesos químicos.</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group cursor-pointer p-5 border-2 border-primary bg-primary/5 dark:bg-primary/10 rounded-xl transition-all flex gap-4">
+<div class="size-12 rounded-lg bg-primary flex items-center justify-center text-white shrink-0">
+<span class="material-symbols-outlined text-3xl">corporate_fare</span>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between items-center">
+<h4 class="font-bold text-lg">Oficina</h4>
+<span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+</div>
+<p class="text-slate-gray dark:text-gray-400 text-sm leading-relaxed">Espacios administrativos, sedes corporativas y centros de servicios.</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group cursor-pointer p-5 border-2 border-[#dcdfe5] dark:border-gray-800 rounded-xl hover:border-primary/50 hover:bg-white dark:hover:bg-gray-800/50 transition-all flex gap-4 bg-white dark:bg-background-dark/30">
+<div class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">warehouse</span>
+</div>
+<div class="space-y-1">
+<h4 class="font-bold text-lg">Almacén</h4>
+<p class="text-slate-gray dark:text-gray-400 text-sm leading-relaxed">Centros de logística, almacenamiento y distribución de mercancías.</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="group cursor-pointer p-5 border-2 border-[#dcdfe5] dark:border-gray-800 rounded-xl hover:border-primary/50 hover:bg-white dark:hover:bg-gray-800/50 transition-all flex gap-4 bg-white dark:bg-background-dark/30">
+<div class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">storefront</span>
+</div>
+<div class="space-y-1">
+<h4 class="font-bold text-lg">Centro Comercial</h4>
+<p class="text-slate-gray dark:text-gray-400 text-sm leading-relaxed">Espacios de retail, locales comerciales y áreas públicas de alto tráfico.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="pt-10 flex flex-col md:flex-row gap-4 items-center justify-between border-t border-[#dcdfe5] dark:border-gray-800">
+<p class="text-sm text-slate-gray dark:text-gray-400 italic">
+                        * Todos los datos son tratados bajo normativas de privacidad industrial.
+                    </p>
+<button class="w-full md:w-auto min-w-[200px] flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-lg shadow-lg shadow-primary/20 transition-all transform hover:-translate-y-1 active:scale-95">
+                        Siguiente
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="py-8 px-6 text-center border-t border-[#dcdfe5] dark:border-gray-800 mt-10">
+<p class="text-xs text-slate-gray uppercase tracking-widest font-bold">EccoIA Industrial Wizard v2.4</p>
+</footer>
+</div>
+</body></html>
