@@ -10,6 +10,7 @@ import {
 import { useApp } from '../context/AppContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { residentialApi } from '../api/residential';
 
 // Configuration Data
 const houseTypes = [
@@ -172,7 +173,8 @@ const ResidentialConfig = () => {
         if (step > 0) setStep(step - 1);
     };
 
-    const handleFinish = () => {
+    const handleFinish = async () => {
+        setIsUploading(true); // Reuse uploading state for final save
         // Determine strictness/difficulty based on budget gap
         let difficulty = 'normal';
         if (formData.monthlyBill && formData.budgetTarget) {
@@ -181,23 +183,63 @@ const ResidentialConfig = () => {
             if (target < bill * 0.8) difficulty = 'hard'; // Seeking >20% savings
         }
 
-        // Update Global Context
-        setUserProfile(prev => ({
-            ...prev,
-            type: 'residential',
-            config: {
-                ...formData,
-                difficulty,
-                scannedData // Save extracted raw data if needed
+        try {
+            // 1. Save Profile
+            const profileData = {
+                house_type: formData.houseType,
+                occupants: formData.occupants,
+                area_sqm: formData.area,
+                city: formData.city,
+                stratum: formData.stratum,
+                occupancy_profile: formData.occupancyProfile,
+                energy_source: formData.energySource,
+                monthly_bill_avg: parseFloat(formData.monthlyBill) || 0,
+                target_monthly_bill: parseFloat(formData.budgetTarget) || 0,
+                average_kwh_captured: parseFloat(formData.averageKwh) || 0,
+                history_kwh: formData.historyKwh
+            };
+            await residentialApi.updateProfile(profileData);
+
+            // 2. Prepare and Save Assets
+            const assetsToBatch = formData.appliances.map(appId => {
+                const room = roomCategories.find(z => z.items.includes(appId));
+                const item = room?.itemsData.find(i => i.id === appId);
+                return {
+                    name: item?.name || appId,
+                    icon: appId,
+                    category: room?.id || 'general',
+                    is_high_impact: item?.isHighImpact || false,
+                    expert_check_value: formData.applianceDetails[appId + '_check'] || false,
+                    status: true
+                };
+            });
+
+            if (assetsToBatch.length > 0) {
+                await residentialApi.createAssetBatch(assetsToBatch);
             }
-        }));
 
-        // Update goals based on input
-        if (formData.budgetTarget) {
-            updateGoals({ monthlyBudget: parseFloat(formData.budgetTarget) });
+            // Update Global Context (keeping local state for immediate UI feedback)
+            setUserProfile(prev => ({
+                ...prev,
+                type: 'residential',
+                config: {
+                    ...formData,
+                    difficulty,
+                    scannedData
+                }
+            }));
+
+            if (formData.budgetTarget) {
+                updateGoals({ monthlyBudget: parseFloat(formData.budgetTarget) });
+            }
+
+            navigate('/dashboard');
+        } catch (error) {
+            console.error("Error saving residential setup:", error);
+            // Optionally add a notification here
+        } finally {
+            setIsUploading(false);
         }
-
-        navigate('/dashboard');
     };
 
     const toggleAppliance = (id) => {

@@ -11,7 +11,9 @@ const StatCard = ({
     trend,
     trendValue,
     tooltip,
-    className = ""
+    pulse = false,
+    className = "",
+    ...props
 }) => {
     const colorClasses = {
         primary: 'bg-primary/10 text-primary border-primary/20',
@@ -23,35 +25,46 @@ const StatCard = ({
     };
 
     return (
-        <Card className={`p-6 flex flex-col group hover:border-emerald-500/30 transition-all duration-300 ${className}`}>
-            <div className="flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-2xl border ${colorClasses[color]} shadow-sm`}>
-                    <Icon size={24} />
-                </div>
-                {trend && (
-                    <div className={`flex items-center gap-1 text-sm font-bold ${trend === 'down' ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {trend === 'down' ? <ArrowDownRight size={16} /> : <ArrowUpRight size={16} />}
-                        {trendValue}%
-                    </div>
-                )}
+        <Card
+            className={`p-4 flex items-center gap-4 group hover:border-blue-500/30 transition-all duration-300 ${className}`}
+            {...props}
+        >
+            <div className={`p-3 rounded-2xl border ${colorClasses[color]} shadow-sm shrink-0 ${pulse ? 'animate-pulse' : ''}`}>
+                <Icon size={24} />
             </div>
-            <div className="mt-auto">
-                <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</span>
-                    {tooltip && (
-                        <div className="group/tip relative">
-                            <Info size={12} className="text-slate-300 cursor-help" />
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-[10px] text-white rounded-lg opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
-                                {tooltip}
-                            </div>
+
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1.5 mb-0.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{title}</span>
+                    {trend && (
+                        <div className={`flex items-center gap-0.5 text-[10px] font-bold ${trend === 'down' ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {trendValue}%
                         </div>
                     )}
                 </div>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{value}</span>
-                    <span className="text-sm font-bold text-slate-400">{unit}</span>
+
+                <div className="flex items-baseline gap-1.5 min-h-[1.5rem] mt-1">
+                    {value && (
+                        <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
+                            {value}
+                        </span>
+                    )}
+                    {unit && (
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight shrink-0">
+                            {unit}
+                        </span>
+                    )}
                 </div>
             </div>
+
+            {tooltip && (
+                <div className="group/tip relative ml-auto shrink-0">
+                    <Info size={12} className="text-slate-300 cursor-help" />
+                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-slate-900 text-[10px] text-white rounded-lg opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
+                        {tooltip}
+                    </div>
+                </div>
+            )}
         </Card>
     );
 };

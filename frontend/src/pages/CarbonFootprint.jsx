@@ -27,6 +27,20 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const CarbonFootprint = () => {
+  const [isMounted, setIsMounted] = React.useState(false);
+  const [isReady, setIsReady] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (isMounted) {
+      const timer = setTimeout(() => setIsReady(true), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isMounted]);
+
   const { userProfile, consumptionHistory } = useApp();
   const {
     co2Footprint = 0, hasData, enrichedAppliances = [],
@@ -149,8 +163,8 @@ const CarbonFootprint = () => {
               </div>
             </div>
 
-            <div className="h-[350px]" style={{ minHeight: '350px' }}>
-              {hasData ? (
+            <div className="h-[350px] w-full min-w-0" style={{ minHeight: '350px' }}>
+              {hasData && isReady ? (
                 <ResponsiveContainer width="100%" height={350}>
                   <AreaChart data={monthlyData}>
                     <defs>
@@ -194,26 +208,28 @@ const CarbonFootprint = () => {
           {/* Distribution Pie Chart */}
           <Card className="p-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
             <h2 className="text-xl font-black text-slate-800 dark:text-white mb-8">Fuentes de Emisión</h2>
-            <div className="h-[220px] mb-8" style={{ minHeight: '220px' }}>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie
-                    data={carbonSources}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={8}
-                    dataKey="amount"
-                    stroke="none"
-                  >
-                    {carbonSources.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="h-[220px] mb-8 w-full min-w-0" style={{ minHeight: '220px' }}>
+              {isReady && (
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie
+                      data={carbonSources}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={8}
+                      dataKey="amount"
+                      stroke="none"
+                    >
+                      {carbonSources.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
             <div className="space-y-4">
               {carbonSources.map((source, idx) => (

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const Card = ({ children, className = '', glass = false, hover = false }) => {
+const Card = ({ children, className = '', glass = false, hover = false, ...props }) => {
     const baseStyles = "rounded-2xl p-6 border transition-all duration-300";
 
     const glassStyles = glass
@@ -13,7 +13,10 @@ const Card = ({ children, className = '', glass = false, hover = false }) => {
         : "";
 
     return (
-        <div className={`${baseStyles} ${glassStyles} ${hoverStyles} ${className}`}>
+        <div
+            className={`${baseStyles} ${glassStyles} ${hoverStyles} ${className}`}
+            {...props}
+        >
             {children}
         </div>
     );

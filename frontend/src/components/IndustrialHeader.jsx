@@ -1,4 +1,4 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 import { Building2, Download, Bell, Settings } from 'lucide-react';
 import Button from './ui/Button';
 
@@ -36,9 +36,12 @@ const IndustrialHeader = () => {
                     <span className="absolute top-2 right-2 size-2 bg-blue-500 rounded-full border-2 border-slate-950"></span>
                 </div>
 
-                <button className="p-2.5 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl border border-transparent hover:border-slate-800 transition-all">
+                <Link
+                    to="/industrial-settings"
+                    className="p-2.5 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl border border-transparent hover:border-slate-800 transition-all"
+                >
                     <Settings size={20} />
-                </button>
+                </Link>
             </div>
         </header>
     );
