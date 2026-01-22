@@ -19,6 +19,7 @@ import Onboarding from './pages/Onboarding.jsx';
 import DesignSystem from './pages/DesignSystem.jsx';
 import UserProfile from './pages/UserProfile.jsx';
 import Layout from './components/Layout.jsx';
+import IndustrialOnboarding from './pages/IndustrialOnboarding.jsx';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
             <Route path="/data-assistant" element={<DataAssistant />} />
             <Route path="/results-dashboard" element={<ResultsDashboard />} />
             <Route path="/design-system" element={<DesignSystem />} />
+            <Route path="/industrial-onboarding" element={<IndustrialOnboarding />} />
             <Route path="/profile" element={<UserProfile />} />
           </Routes>
         </Layout>
