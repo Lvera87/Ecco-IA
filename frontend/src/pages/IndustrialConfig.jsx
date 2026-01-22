@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { useApp } from '../context/AppContext';
 
 // Step Indicator Component
 const StepIndicator = ({ currentStep, totalSteps }) => (
@@ -108,11 +109,22 @@ const IndustrialConfig = () => {
     { id: 'comercial', icon: Store, name: 'Centro Comercial', description: 'Espacios de retail y comercio' },
   ];
 
+  const { setUserProfile, addNotification } = useApp();
+
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1);
     } else {
-      navigate('/industrial/dashboard');
+      setUserProfile({
+        type: 'industrial',
+        config: formData
+      });
+      addNotification({
+        type: 'success',
+        title: 'Perfil Industrial Configurado',
+        message: 'Bienvenido a EccoIA Enterprise.'
+      });
+      navigate('/industrial-dashboard');
     }
   };
 
