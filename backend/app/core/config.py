@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # JWT / Auth settings
     secret_key: str = "CHANGE_ME_TO_A_RANDOM_SECRET"
     access_token_expire_minutes: int = 60 * 24 * 7  # one week by default
+    
+    # Development mode - ONLY for local development, bypasses auth
+    dev_mode: bool = True  # Set to False in production
 
     # Gemini settings
     gemini_api_key: str | None = None

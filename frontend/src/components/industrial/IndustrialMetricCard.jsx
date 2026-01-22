@@ -1,6 +1,5 @@
 import React from 'react';
 import Card from '../ui/Card';
-import { LucideIcon } from 'lucide-react';
 
 const IndustrialMetricCard = ({
     title,
@@ -13,8 +12,8 @@ const IndustrialMetricCard = ({
 }) => {
     return (
         <Card className={`p-8 flex flex-col justify-between transition-all duration-300 group hover:translate-y-[-4px] ${isPremium
-                ? 'bg-slate-900 border-blue-500/20 relative overflow-hidden'
-                : 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200 dark:border-white/5 hover:border-blue-500/30'
+            ? 'bg-slate-900 border-blue-500/20 relative overflow-hidden'
+            : 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200 dark:border-white/5 hover:border-blue-500/30'
             }`}>
             {isPremium && (
                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-150 transition-transform duration-1000">
