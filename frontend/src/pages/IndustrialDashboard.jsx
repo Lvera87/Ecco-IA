@@ -19,6 +19,11 @@ import SkeletonDashboard from '../components/industrial/SkeletonDashboard';
 // API Services
 import { industrialApi } from '../api/industrial';
 import { settingsApi } from '../api/settings';
+import { gamificationApi } from '../api/gamification';
+
+// Gamification Components
+import GamificationBadge from '../components/ui/GamificationBadge';
+import MissionWidget from '../components/ui/MissionWidget';
 
 const INITIAL_ASSET_STATE = {
   name: '',
@@ -38,7 +43,8 @@ const IndustrialDashboard = () => {
   const [data, setData] = useState({
     insights: null,
     assets: [],
-    settings: null
+    settings: null,
+    gamification: null
   });
 
   const [modals, setModals] = useState({
@@ -76,12 +82,13 @@ const IndustrialDashboard = () => {
   const fetchDashboardData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [assets, settings, insights] = await Promise.all([
+      const [assets, settings, insights, gamification] = await Promise.all([
         industrialApi.getAssets(),
         settingsApi.getSettings(),
-        industrialApi.getDashboardInsights()
+        industrialApi.getDashboardInsights(),
+        gamificationApi.getStats().catch(() => null) // Fallback si no hay misiones
       ]);
-      setData({ assets, settings, insights });
+      setData({ assets, settings, insights, gamification });
     } catch (error) {
       console.error("Dashboard Sync Error:", error);
       addNotification({
@@ -93,6 +100,20 @@ const IndustrialDashboard = () => {
       if (!silent) setLoading(false);
     }
   }, [addNotification]);
+
+  const handleCompleteMission = async (missionId) => {
+    try {
+      await gamificationApi.completeMission(missionId);
+      addNotification({
+        type: 'achievement',
+        title: '¡Misión Cumplida!',
+        message: 'Has ganado XP y EcoPoints para tu planta.'
+      });
+      fetchDashboardData(true);
+    } catch (error) {
+      console.error("Mission Error:", error);
+    }
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -174,7 +195,7 @@ const IndustrialDashboard = () => {
       <main className="p-8 max-w-[1600px] mx-auto space-y-12">
 
         {/* Header Branding Section */}
-        <section className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div className="space-y-2">
             <h1 className="text-5xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
               {data.settings?.company_name || 'Gestión Industrial'}
@@ -184,30 +205,33 @@ const IndustrialDashboard = () => {
                 <Activity size={12} className="animate-pulse" /> IA Live Monitoring
               </div>
               <p className="text-sm font-semibold text-slate-500">
-                Línea de producción: <span className="text-emerald-500">OPTIZIMADA</span>
+                Línea de producción: <span className="text-emerald-500">OPTIMIZADA</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => fetchDashboardData()}
-              variant="outline"
-              className="h-14 px-8 border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest hover:bg-white dark:hover:bg-white/5 transition-all"
-            >
-              <Activity size={18} className="mr-3 text-blue-500" /> Sincronizar Planta
-            </Button>
-            <Button
-              onClick={() => setModals(prev => ({ ...prev, add: true }))}
-              className="h-14 px-10 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-2xl shadow-blue-500/30 text-xs uppercase tracking-widest transform transition active:scale-95"
-            >
-              <Plus size={20} className="mr-3" /> Registrar Activo
-            </Button>
+          <div className="flex flex-col items-end gap-4">
+            <GamificationBadge stats={data.gamification} loading={loading} />
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => fetchDashboardData()}
+                variant="outline"
+                className="h-14 px-8 border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest hover:bg-white dark:hover:bg-white/5 transition-all"
+              >
+                <Activity size={18} className="mr-3 text-blue-500" /> Sincronizar Planta
+              </Button>
+              <Button
+                onClick={() => setModals(prev => ({ ...prev, add: true }))}
+                className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-95"
+              >
+                <Plus size={18} className="mr-3" /> Nuevo Activo
+              </Button>
+            </div>
           </div>
         </section>
 
         {/* Global Strategy Metrics */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        < section className="grid grid-cols-1 lg:grid-cols-3 gap-8" >
           <IndustrialMetricCard
             title="Consumo Mensual"
             value={data.insights?.total_consumption_monthly_kwh?.toLocaleString() || 0}
@@ -231,50 +255,78 @@ const IndustrialDashboard = () => {
             icon={Target}
             colorClass="text-blue-400"
           />
-        </section>
+        </section >
 
         {/* AI Insight Bridge */}
-        <IndustrialInsightBanner
+        < IndustrialInsightBanner
           insight={data.insights}
           onClick={() => setModals(prev => ({ ...prev, insight: true }))}
         />
 
-        {/* Technical Asset Inventory */}
-        <section className="space-y-8">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500">
-                <Building2 size={24} />
+        {/* --- Multi-Column Main Content --- */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+          
+          {/* Left: Technical Inventory (3 Columns) */}
+          <section className="xl:col-span-3 space-y-8">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500">
+                  <Building2 size={24} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-display font-bold text-slate-900 dark:text-white">Inventario Técnico</h3>
+                  <p className="text-sm text-slate-500 font-medium">Monitoreo activo de carga y eficiencia por equipo</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-2xl font-display font-bold text-slate-900 dark:text-white">Inventario Técnico</h3>
-                <p className="text-sm text-slate-500 font-medium">Monitoreo activo de carga y eficiencia por equipo</p>
-              </div>
+              <span className="px-4 py-2 bg-slate-100 dark:bg-white/5 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                {data.assets.length} Equipos en Línea
+              </span>
             </div>
-            <span className="px-4 py-2 bg-slate-100 dark:bg-white/5 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {data.assets.length} Equipos en Línea
-            </span>
-          </div>
 
-          {!hasAssets ? (
-            <div className="py-24">
-              <EmptyState
-                title="Planta vacía"
-                description="Registra tus motores y compresores para empezar a recibir auditorías de IA en tiempo real."
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {data.assets.map((asset) => (
-                <IndustrialAssetCard
-                  key={asset.id}
-                  asset={asset}
-                  onClick={(a) => setModals(prev => ({ ...prev, selectedAsset: a }))}
+            {!hasAssets ? (
+              <div className="py-24">
+                <EmptyState
+                  title="Planta vacía"
+                  description="Registra tus motores y compresores para recibir auditorías de IA en tiempo real."
                 />
-              ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {data.assets.map((asset) => (
+                  <IndustrialAssetCard
+                    key={asset.id}
+                    asset={asset}
+                    onClick={(a) => setModals(prev => ({ ...prev, selectedAsset: a }))}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Right: Gamification & Missions (1 Column) */}
+          <aside className="xl:col-span-1 space-y-6">
+            <MissionWidget 
+              missions={data.gamification?.active_missions || []}
+              onComplete={handleCompleteMission}
+              loading={loading}
+            />
+            
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-white/10 rounded-lg">
+                  <Trophy className="w-5 h-5 text-blue-200" />
+                </div>
+                <h4 className="font-bold">Próxima Recompensa</h4>
+              </div>
+              <p className="text-xs text-blue-100 mb-4 opacity-80 leading-relaxed">
+                Alcanza el nivel 5 para desbloquear el Reporte de Sostenibilidad Automatizado y auditoría de red profunda.
+              </p>
+              <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white w-2/3 shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+              </div>
             </div>
-          )}
-        </section>
+          </aside>
+        </div>
       </main>
 
       {/* --- Modals (Refactored Logic) --- */}
@@ -440,7 +492,7 @@ const IndustrialDashboard = () => {
           </div>
         </form>
       </Modal>
-    </div>
+    </div >
   );
 };
 
