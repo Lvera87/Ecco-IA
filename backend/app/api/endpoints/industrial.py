@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.session import get_async_session
 from app.models.industrial_asset import IndustrialAsset as AssetModel
+from app.models.user import User
+from app.api.deps import get_current_active_user
 from app.schemas.industrial_asset import IndustrialAssetCreate, IndustrialAssetRead
 from app.services.gemini_service import gemini_service
 
