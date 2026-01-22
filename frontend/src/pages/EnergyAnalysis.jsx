@@ -36,6 +36,20 @@ const CustomTooltip = ({ active, payload, label }) => {
 const EnergyAnalysis = () => {
   const [timeRange, setTimeRange] = useState('week');
   const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (isMounted) {
+      const timer = setTimeout(() => setIsReady(true), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isMounted]);
+
   const { userProfile, consumptionHistory, addNotification } = useApp();
 
   const {
@@ -210,8 +224,8 @@ const EnergyAnalysis = () => {
               </div>
             </div>
 
-            <div className="h-[300px]" style={{ minHeight: '300px' }}>
-              {hasData ? (
+            <div className="h-[300px] w-full min-w-0" style={{ minHeight: '300px' }}>
+              {hasData && isReady ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <ComposedChart data={processedData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.1} />
@@ -281,38 +295,40 @@ const EnergyAnalysis = () => {
             </div>
           </div>
 
-          <div className="h-[250px]" style={{ minHeight: '250px' }}>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={hourlyData}>
-                <defs>
-                  <linearGradient id="colorHourly" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00c2cc" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#00c2cc" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.1} />
-                <XAxis
-                  dataKey="hora"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                  unit=" kWh"
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#00c2cc"
-                  strokeWidth={3}
-                  fill="url(#colorHourly)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-[250px] w-full min-w-0" style={{ minHeight: '250px' }}>
+            {isReady && (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={hourlyData}>
+                  <defs>
+                    <linearGradient id="colorHourly" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00c2cc" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#00c2cc" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.1} />
+                  <XAxis
+                    dataKey="hora"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                    unit=" kWh"
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#00c2cc"
+                    strokeWidth={3}
+                    fill="url(#colorHourly)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
 

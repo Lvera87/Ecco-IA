@@ -138,6 +138,19 @@ const FinancialImpact = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('year');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRec, setSelectedRec] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      const timer = setTimeout(() => setIsReady(true), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isMounted]);
 
   const { addNotification, consumptionHistory } = useApp();
   const {
@@ -302,8 +315,8 @@ const FinancialImpact = () => {
               </div>
             </div>
 
-            <div className="h-[350px]" style={{ minHeight: '350px' }}>
-              {hasData ? (
+            <div className="h-[350px] w-full min-w-0" style={{ minHeight: '350px' }}>
+              {hasData && isReady ? (
                 <ResponsiveContainer width="100%" height={350}>
                   <AreaChart data={chartData}>
                     <defs>
@@ -350,26 +363,28 @@ const FinancialImpact = () => {
               Distribución
             </h2>
 
-            <div className="h-[220px] mb-8" style={{ minHeight: '220px' }}>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie
-                    data={costBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={8}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {costBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="h-[220px] mb-8 w-full min-w-0" style={{ minHeight: '220px' }}>
+              {isReady && (
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie
+                      data={costBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={8}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {costBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
 
             <div className="space-y-4">

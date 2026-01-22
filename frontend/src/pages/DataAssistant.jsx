@@ -110,13 +110,13 @@ const DataAssistant = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Actions */}
           <div className="px-6 py-4 flex gap-2 overflow-x-auto border-t border-slate-100 dark:border-slate-800 no-scrollbar">
             {[
               "¿Cómo reducir consumo en horas pico?",
-              "Analiza mi Motor de Extrusión",
-              "¿Cuál es mi ahorro potencial hoy?",
-              "Sugerencias de mantenimiento"
+              "Analítica por Turnos (Shift Analytics)",
+              "Monitor de Intensidad Energética (kWh/m²)",
+              "Reporte de Desperdicio por Activo",
+              "Sugerencias de mantenimiento predictivo"
             ].map((suggest, i) => (
               <button
                 key={i}

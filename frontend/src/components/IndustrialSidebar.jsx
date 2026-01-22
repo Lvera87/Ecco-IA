@@ -1,3 +1,4 @@
+import { NavLink, Link } from 'react-router-dom';
 import { Factory, LayoutDashboard, Globe, LogOut, MessageSquareText, Settings } from 'lucide-react';
 
 const IndustrialSidebar = () => {
@@ -5,17 +6,16 @@ const IndustrialSidebar = () => {
         { to: "/industrial-dashboard", icon: LayoutDashboard, label: "Dashboard IA" },
         { to: "/data-assistant", icon: MessageSquareText, label: "Asistente Ecco" },
         { to: "/global-consumption", icon: Globe, label: "Fugas y Desperdicio" },
-        { to: "/industrial-settings", icon: Settings, label: "Configuración Planta" },
     ];
 
     return (
         <aside className="w-72 bg-slate-950 h-full flex flex-col p-6 text-slate-300 shrink-0 border-r border-slate-900">
-            <div className="flex items-center gap-3 mb-10 px-2">
-                <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20">
+            <Link to="/" className="flex items-center gap-3 mb-10 px-2 group cursor-pointer decoration-none">
+                <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform">
                     <Factory size={24} className="text-white" />
                 </div>
                 <h1 className="text-2xl font-display font-bold tracking-tight text-white leading-none">EccoIA <span className="text-blue-500 text-xs block font-mono">INDUSTRIAL</span></h1>
-            </div>
+            </Link>
 
             <nav className="flex-1 space-y-1.5">
                 {navItems.map((item) => (

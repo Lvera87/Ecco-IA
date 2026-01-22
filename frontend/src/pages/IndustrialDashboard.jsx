@@ -1,286 +1,445 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Zap, TrendingDown, Leaf, Trophy, Calendar, ChevronRight,
-  Target, Award, DollarSign, Plus, Lightbulb, Wind, AlertCircle,
-  Factory, Building2, Activity, BarChart3, Loader2
+  Zap, Plus, Activity, Building2, Factory, Trash2, Loader2, Target
 } from 'lucide-react';
-import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip
-} from 'recharts';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import StatCard from '../components/ui/StatCard';
-import InsightCard from '../components/ui/InsightCard';
-import EmptyState from '../components/ui/EmptyState';
-import { useApp } from '../context/AppContext';
-import { useEnergyMath } from '../hooks/useEnergyMath';
-import { industrialApi } from '../api/industrial';
 
-const CustomTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-900/90 border border-slate-700/50 backdrop-blur-md p-3 rounded-xl shadow-2xl">
-        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">{payload[0].payload.time}</p>
-        <p className="text-xl font-display font-bold text-blue-500">
-          {payload[0].value.toLocaleString()} <span className="text-xs font-medium text-slate-500">kWh</span>
-        </p>
-      </div>
-    );
-  }
-  return null;
+// UI Components
+import Button from '../components/ui/Button';
+import EmptyState from '../components/ui/EmptyState';
+import Modal from '../components/ui/Modal';
+import { useApp } from '../context/AppContext';
+
+// Industrial Specialized Components
+import IndustrialMetricCard from '../components/industrial/IndustrialMetricCard';
+import IndustrialAssetCard from '../components/industrial/IndustrialAssetCard';
+import IndustrialInsightBanner from '../components/industrial/IndustrialInsightBanner';
+import IndustrialAlertOverlay from '../components/industrial/IndustrialAlertOverlay';
+import SkeletonDashboard from '../components/industrial/SkeletonDashboard';
+
+// API Services
+import { industrialApi } from '../api/industrial';
+import { settingsApi } from '../api/settings';
+
+const INITIAL_ASSET_STATE = {
+  name: '',
+  asset_type: 'Motor de Inducción',
+  nominal_power_kw: '',
+  daily_usage_hours: '',
+  op_days_per_month: 22,
+  load_factor: 0.75,
+  power_factor: 0.85,
+  efficiency_percentage: 85,
+  location: ''
 };
 
 const IndustrialDashboard = () => {
-  const [isMounted, setIsMounted] = useState(false);
+  // --- States ---
   const [loading, setLoading] = useState(true);
-  const [aiInsights, setAiInsights] = useState(null);
-  const [assets, setAssets] = useState([]);
-  const { userProfile } = useApp();
-  const config = userProfile?.config || {};
+  const [data, setData] = useState({
+    insights: null,
+    assets: [],
+    settings: null
+  });
 
-  const {
-    formatMoney
-  } = useEnergyMath();
+  const [modals, setModals] = useState({
+    insight: false,
+    add: false,
+    selectedAsset: null
+  });
 
-  useEffect(() => {
-    setIsMounted(true);
-    fetchDashboardData();
-  }, []);
+  const [actions, setActions] = useState({
+    isDeleting: false,
+    isAdding: false,
+    isOptimizing: false
+  });
 
-  const fetchDashboardData = async () => {
+  const [newAsset, setNewAsset] = useState(INITIAL_ASSET_STATE);
+  const { addNotification } = useApp();
+
+  // --- Derived State (Performance Optimized) ---
+  const hasAssets = useMemo(() => data.assets.length > 0, [data.assets]);
+  const efficiencyScore = useMemo(() => 100 - (data.insights?.waste_score || 0), [data.insights]);
+
+  const activeAlert = useMemo(() => {
+    if (!data.insights?.top_waste_reason || data.insights.waste_score < 25) return null;
+
+    return {
+      assetName: "Sistema Industrial Central", // O podrías extraer el equipo específico si el backend lo da
+      currentKw: data.insights.total_real_demand_kw,
+      limitKw: data.insights.total_real_demand_kw * 0.8, // Simulación de límite nominal al 80%
+      wastePerHour: data.insights.potential_savings,
+      duration: 15 // Mock de duración
+    };
+  }, [data.insights]);
+
+  // --- Data Fetching ---
+  const fetchDashboardData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      setLoading(true);
-      const [assetsData, insightsData] = await Promise.all([
+      const [assets, settings, insights] = await Promise.all([
         industrialApi.getAssets(),
+        settingsApi.getSettings(),
         industrialApi.getDashboardInsights()
       ]);
-      setAssets(assetsData);
-      setAiInsights(insightsData);
+      setData({ assets, settings, insights });
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("Dashboard Sync Error:", error);
+      addNotification({
+        type: 'alert',
+        title: 'Error de Sincronización',
+        message: 'No pudimos conectar con los sistemas de la planta.'
+      });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+    }
+  }, [addNotification]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // --- Handlers ---
+  const handleAddAsset = async (e) => {
+    e.preventDefault();
+    if (!newAsset.name?.trim()) return;
+
+    try {
+      setActions(prev => ({ ...prev, isAdding: true }));
+      await industrialApi.createAsset({
+        ...newAsset,
+        nominal_power_kw: parseFloat(newAsset.nominal_power_kw),
+        daily_usage_hours: parseFloat(newAsset.daily_usage_hours),
+        efficiency_percentage: parseInt(newAsset.efficiency_percentage)
+      });
+
+      setModals(prev => ({ ...prev, add: false }));
+      setNewAsset(INITIAL_ASSET_STATE);
+      addNotification({
+        type: 'system',
+        title: 'Activo Registrado',
+        message: `${newAsset.name} ahora está bajo monitoreo de IA.`
+      });
+      fetchDashboardData(true);
+    } catch (error) {
+      console.error("Add Asset Error:", error);
+    } finally {
+      setActions(prev => ({ ...prev, isAdding: false }));
     }
   };
 
-  // Mock chart data if no real trend yet
-  const chartData = [
-    { time: '00:00', value: 2450 }, { time: '04:00', value: 2150 },
-    { time: '08:00', value: 4880 }, { time: '12:00', value: 5420 },
-    { time: '16:00', value: 5150 }, { time: '20:00', value: 3820 },
-    { time: '22:00', value: 2850 },
-  ];
+  const handleDeleteAsset = async (id) => {
+    if (!window.confirm("¿Confirmas el retiro de este equipo de la línea de producción?")) return;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-8">
-        <div className="relative">
-          <div className="size-20 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Factory className="text-blue-500 animate-pulse" size={24} />
-          </div>
-        </div>
-        <p className="mt-6 text-slate-500 font-display font-medium animate-pulse tracking-widest uppercase text-xs">
-          Analizando eficiencia industrial con Gemini 2.5...
-        </p>
-      </div>
-    );
-  }
+    try {
+      setActions(prev => ({ ...prev, isDeleting: true }));
+      await industrialApi.deleteAsset(id);
+      addNotification({
+        type: 'system',
+        title: 'Inventario Actualizado',
+        message: 'Equipo retirado correctamente.'
+      });
+      setModals(prev => ({ ...prev, selectedAsset: null }));
+      fetchDashboardData(true);
+    } catch (error) {
+      console.error("Delete Asset Error:", error);
+    } finally {
+      setActions(prev => ({ ...prev, isDeleting: false }));
+    }
+  };
 
-  const hasData = assets.length > 0;
-  const efficiencyScore = aiInsights?.waste_score || 0;
+  const handleApplyOptimization = async () => {
+    setActions(prev => ({ ...prev, isOptimizing: true }));
+    // Future integration with AI Service Agent
+    setTimeout(() => {
+      setActions(prev => ({ ...prev, isOptimizing: false }));
+      setModals(prev => ({ ...prev, insight: false }));
+      addNotification({
+        type: 'achievement',
+        title: 'Optimización Ejecutada',
+        message: 'Parámetros ajustados por IA para maximizar el ROI.'
+      });
+      fetchDashboardData(true);
+    }, 2000);
+  };
 
-  // Simple calculation for the hybrid part
-  const totalKw = assets.reduce((acc, curr) => acc + curr.nominal_power_kw, 0);
-  const dailyKwh = assets.reduce((acc, curr) => acc + (curr.nominal_power_kw * curr.daily_usage_hours), 0);
-  const projectedKwh = dailyKwh * 30;
+  // --- Render Helpers ---
+  if (loading) return <SkeletonDashboard />;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-body relative overflow-x-hidden">
-      <main className="relative z-10 p-8 max-w-[1600px] mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 transition-colors">
+      <IndustrialAlertOverlay
+        alert={activeAlert}
+        onAction={handleApplyOptimization}
+      />
+      <main className="p-8 max-w-[1600px] mx-auto space-y-12">
 
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-4xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
-              {config.companyName ? `¡Hola, ${config.companyName}!` : 'Dashboard Industrial'}
+        {/* Header Branding Section */}
+        <section className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="space-y-2">
+            <h1 className="text-5xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
+              {data.settings?.company_name || 'Gestión Industrial'}
             </h1>
-            <p className="text-slate-500 mt-2 flex items-center gap-2">
-              <Factory size={16} className="text-blue-500" />
-              {hasData
-                ? <span>Tu planta tiene <span className="text-blue-500 font-bold">{assets.length} activos</span> bajo monitoreo de IA.</span>
-                : <span>Monitorea el consumo de tu planta en tiempo real.</span>
-              }
-            </p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20 text-[10px] font-black uppercase text-blue-500 tracking-wider">
+                <Activity size={12} className="animate-pulse" /> IA Live Monitoring
+              </div>
+              <p className="text-sm font-semibold text-slate-500">
+                Línea de producción: <span className="text-emerald-500">OPTIZIMADA</span>
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden lg:flex flex-col items-end px-4 border-r border-slate-200 dark:border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">{config.sector || 'Sistemas Activos'}</span>
-              <span className="text-xl font-display font-bold text-blue-500">{totalKw.toFixed(1)} kW Instalados</span>
-            </div>
             <Button
-              onClick={fetchDashboardData}
+              onClick={() => fetchDashboardData()}
               variant="outline"
-              className="border-slate-200 dark:border-slate-800"
+              className="h-14 px-8 border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest hover:bg-white dark:hover:bg-white/5 transition-all"
             >
-              <Activity size={18} className="mr-2" />
-              Actualizar IA
+              <Activity size={18} className="mr-3 text-blue-500" /> Sincronizar Planta
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-500/20"
+              onClick={() => setModals(prev => ({ ...prev, add: true }))}
+              className="h-14 px-10 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-2xl shadow-blue-500/30 text-xs uppercase tracking-widest transform transition active:scale-95"
             >
-              <Plus size={18} className="mr-2" />
-              Nuevo Activo
+              <Plus size={20} className="mr-3" /> Registrar Activo
             </Button>
           </div>
-        </div>
+        </section>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {/* Global Strategy Metrics */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <IndustrialMetricCard
+            title="Consumo Mensual"
+            value={data.insights?.total_consumption_monthly_kwh?.toLocaleString() || 0}
+            unit="kWh / mes"
+            icon={Zap}
+            colorClass="text-yellow-500"
+            trend={-4.2}
+          />
+          <IndustrialMetricCard
+            title="Demanda en Tiempo Real"
+            value={data.insights?.total_real_demand_kw || 0}
+            unit="kW Activos"
+            icon={Activity}
+            colorClass="text-blue-500"
+          />
+          <IndustrialMetricCard
+            isPremium
+            title="Ratio de Eco-Eficiencia IA"
+            value={`${efficiencyScore}%`}
+            unit="Score Industrial"
+            icon={Target}
+            colorClass="text-blue-400"
+          />
+        </section>
 
-          {/* Consumption Monitor */}
-          <Card className="md:col-span-2 md:row-span-2 p-8 flex flex-col relative overflow-hidden bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white">Análisis de Desperdicio Industrial</h3>
-                <p className="text-slate-500 text-sm mt-1">Visión procesada por Gemini 2.5 Flash-Lite</p>
+        {/* AI Insight Bridge */}
+        <IndustrialInsightBanner
+          insight={data.insights}
+          onClick={() => setModals(prev => ({ ...prev, insight: true }))}
+        />
+
+        {/* Technical Asset Inventory */}
+        <section className="space-y-8">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500">
+                <Building2 size={24} />
               </div>
-              {hasData && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                  <div className="size-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                  <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">IA Optimizando</span>
+              <div>
+                <h3 className="text-2xl font-display font-bold text-slate-900 dark:text-white">Inventario Técnico</h3>
+                <p className="text-sm text-slate-500 font-medium">Monitoreo activo de carga y eficiencia por equipo</p>
+              </div>
+            </div>
+            <span className="px-4 py-2 bg-slate-100 dark:bg-white/5 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              {data.assets.length} Equipos en Línea
+            </span>
+          </div>
+
+          {!hasAssets ? (
+            <div className="py-24">
+              <EmptyState
+                title="Planta vacía"
+                description="Registra tus motores y compresores para empezar a recibir auditorías de IA en tiempo real."
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {data.assets.map((asset) => (
+                <IndustrialAssetCard
+                  key={asset.id}
+                  asset={asset}
+                  onClick={(a) => setModals(prev => ({ ...prev, selectedAsset: a }))}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* --- Modals (Refactored Logic) --- */}
+
+      {/* AI Audit Solutions */}
+      <Modal
+        isOpen={modals.insight}
+        onClose={() => setModals(prev => ({ ...prev, insight: false }))}
+        title="Auditoría de IA Industrial"
+      >
+        <div className="space-y-8">
+          <div className="p-10 bg-slate-50 dark:bg-white/5 rounded-3xl border border-slate-100 dark:border-white/10 relative overflow-hidden group">
+            <div className="absolute top-4 right-4 text-blue-500 opacity-10 group-hover:opacity-30 transition-opacity">
+              <Activity size={100} />
+            </div>
+            <p className="text-[10px] font-black uppercase text-blue-500 tracking-[0.2em] mb-6 flex items-center gap-2">
+              Interpretación de Gemini
+            </p>
+            <p className="text-2xl text-slate-700 dark:text-slate-200 font-display font-medium leading-relaxed italic">
+              "{data.insights?.ai_interpretation}"
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-8 bg-red-500/5 border border-red-500/10 rounded-2xl space-y-2">
+              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Anomalía Detectada</p>
+              <p className="text-2xl font-bold text-red-500 uppercase leading-none">{data.insights?.top_waste_reason}</p>
+            </div>
+            <div className="p-8 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl text-right space-y-2">
+              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Ahorro Mensual</p>
+              <p className="text-2xl font-bold text-emerald-500 leading-none">{data.insights?.potential_savings}</p>
+            </div>
+          </div>
+
+          <Button
+            className="w-full h-20 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl rounded-3xl shadow-2xl shadow-blue-500/30 transition-all hover:translate-y-[-2px] active:translate-y-0"
+            onClick={handleApplyOptimization}
+            disabled={actions.isOptimizing}
+          >
+            {actions.isOptimizing ? <Loader2 className="animate-spin mr-3" size={24} /> : <Zap className="mr-3" size={24} />}
+            {actions.isOptimizing ? 'Ejecutando Comandos...' : 'Aplicar Optimización IA'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Asset Technical Sheet */}
+      <Modal
+        isOpen={!!modals.selectedAsset}
+        onClose={() => setModals(prev => ({ ...prev, selectedAsset: null }))}
+        title="Ficha Técnica de Ingeniería"
+      >
+        {modals.selectedAsset && (
+          <div className="space-y-10">
+            <div className="flex items-center gap-8 p-8 bg-blue-500/5 border border-blue-500/20 rounded-3xl backdrop-blur-sm">
+              <div className="size-24 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-2xl shadow-blue-500/20">
+                <Factory size={48} />
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-4xl font-display font-bold text-slate-900 dark:text-white uppercase tracking-tight">{modals.selectedAsset.name}</h4>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">{modals.selectedAsset.asset_type}</span>
+                  <div className="size-1 bg-slate-300 rounded-full"></div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">{modals.selectedAsset.location || 'Sin Ubicación'}</span>
                 </div>
-              )}
+              </div>
             </div>
 
-            {hasData ? (
-              <div className="flex-1 flex flex-col">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-6xl font-display font-bold text-slate-900 dark:text-white tracking-tighter">
-                      {projectedKwh.toLocaleString()}
-                    </span>
-                    <span className="text-2xl font-display font-medium text-slate-400 uppercase tracking-widest">kWh / mes</span>
-                  </div>
-
-                  {/* Monitor de Desperdicio Líquido */}
-                  <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 flex items-center gap-4">
-                    <div className="size-12 rounded-xl bg-red-500/20 flex items-center justify-center text-red-500">
-                      <AlertCircle size={24} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-red-500/70 uppercase tracking-widest">Riesgo Detectado</p>
-                      <p className="text-xl font-display font-bold text-red-500">{aiInsights?.top_waste_reason || 'Analizando...'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Activity size={18} className="text-blue-500" />
-                    <h4 className="font-display font-bold text-slate-900 dark:text-white uppercase tracking-widest text-xs">Interpretación de la IA</h4>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed italic">
-                    "{aiInsights?.ai_interpretation || 'Sin interpretación disponible.'}"
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <EmptyState
-                  title="Sin activos industriales"
-                  description="Agrega tus motores, calderas o sistemas para iniciar el análisis."
-                />
-              </div>
-            )}
-          </Card>
-
-          {/* Stat Cards */}
-          <StatCard
-            title="Ahorro Potencial"
-            value={aiInsights?.potential_savings || "$0"}
-            unit="Estimado"
-            icon={DollarSign}
-            color="emerald"
-          />
-          <StatCard
-            title="Consumo de Red"
-            value={(totalKw).toLocaleString()}
-            unit="kW Activos"
-            icon={Zap}
-            color="blue"
-          />
-          <StatCard
-            title="Score de Residuo"
-            value={`${efficiencyScore}%`}
-            unit="Índice"
-            icon={TrendingDown}
-            color={efficiencyScore > 50 ? "red" : "emerald"}
-          />
-          <StatCard
-            title="Sugerencia IA"
-            value={aiInsights?.recommendation_highlight?.split(' ')[0] || "Ninguna"}
-            unit={aiInsights?.recommendation_highlight?.split(' ').slice(1).join(' ') || "Recomendación"}
-            icon={Lightbulb}
-            color="amber"
-          />
-
-          {/* List of Assets */}
-          <Card className="md:col-span-2 p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <h3 className="font-display font-bold text-slate-900 dark:text-white flex items-center gap-2 text-lg mb-6">
-              <Building2 size={20} className="text-blue-500" /> Inventario de Activos
-            </h3>
-
-            <div className="space-y-3">
-              {assets.map((asset, i) => (
-                <div key={asset.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 font-bold">
-                      {i + 1}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{asset.name}</p>
-                      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">{asset.asset_type} • {asset.daily_usage_hours}h uso</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-display font-bold text-blue-500">{asset.nominal_power_kw} kW</p>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Eficiencia: {asset.efficiency_percentage}%</p>
-                  </div>
+            <div className="grid grid-cols-2 gap-6">
+              {[
+                { label: 'Potencia Nominal', value: `${modals.selectedAsset.nominal_power_kw} kW` },
+                { label: 'Ciclo Mensual', value: `${modals.selectedAsset.op_days_per_month} días` },
+                { label: 'Factor de Carga', value: `${(modals.selectedAsset.load_factor * 100).toFixed(0)}%`, highlight: true },
+                { label: 'Eficiencia Actual', value: `${modals.selectedAsset.efficiency_percentage}%` }
+              ].map((spec, i) => (
+                <div key={i} className="p-6 bg-slate-100/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{spec.label}</p>
+                  <p className={`text-3xl font-bold ${spec.highlight ? 'text-blue-500' : 'text-slate-900 dark:text-white'}`}>{spec.value}</p>
                 </div>
               ))}
             </div>
-          </Card>
 
-          {/* Big Suggestion Card */}
-          <Card className="md:col-span-1 lg:col-span-2 p-6 bg-gradient-to-br from-blue-600 to-blue-800 text-white border-none flex flex-col justify-between shadow-xl shadow-blue-500/20">
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl">
-                  <Target size={24} />
-                </div>
-                <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-white/20">Meta de Planta</span>
-              </div>
-              <h3 className="text-2xl font-display font-bold">Optimización Recomendada</h3>
-              <p className="text-blue-100 text-sm mt-2 leading-relaxed">
-                Gemini ha detectado que el activo <span className="font-bold text-white underline">{aiInsights?.top_waste_reason}</span> es tu prioridad número uno para reducir costos este mes.
-              </p>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Lightbulb size={20} className="text-amber-300" />
-                <span className="text-sm font-bold">{aiInsights?.recommendation_highlight}</span>
-              </div>
-              <Button size="sm" className="bg-white text-blue-600 hover:bg-blue-50 font-bold">
-                Aplicar Plan
+            <div className="pt-8 border-t border-slate-200 dark:border-white/10 flex gap-4">
+              <Button
+                className="flex-[2] h-16 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white font-bold rounded-2xl border border-red-500/20 transition-all text-xs uppercase tracking-widest"
+                onClick={() => handleDeleteAsset(modals.selectedAsset.id)}
+                disabled={actions.isDeleting}
+              >
+                {actions.isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 className="mr-3" size={18} />}
+                Retirar de Producción
+              </Button>
+              <Button
+                className="flex-1 h-16 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 text-slate-800 dark:text-white font-bold rounded-2xl text-xs uppercase tracking-widest"
+                onClick={() => setModals(prev => ({ ...prev, selectedAsset: null }))}
+              >
+                Cerrar Ficha
               </Button>
             </div>
-          </Card>
+          </div>
+        )}
+      </Modal>
 
-        </div>
-      </main>
+      {/* Asset Onboarding Form */}
+      <Modal
+        isOpen={modals.add}
+        onClose={() => setModals(prev => ({ ...prev, add: false }))}
+        title="Ingeniería: Nuevo Registro"
+      >
+        <form onSubmit={handleAddAsset} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] ml-1">Identificador del Equipo</label>
+              <input
+                type="text"
+                required
+                className="w-full bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 text-slate-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                placeholder="Ej: Motor Trifásico #04"
+                value={newAsset.name}
+                onChange={e => setNewAsset({ ...newAsset, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] ml-1">Clasificación Técnica</label>
+              <select
+                className="w-full bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all font-bold"
+                value={newAsset.asset_type}
+                onChange={e => setNewAsset({ ...newAsset, asset_type: e.target.value })}
+              >
+                {["Motor de Inducción", "Compresor de Aire", "Enfriador", "Caldera", "Bomba", "Transformador", "Otro"].map(t => (
+                  <option key={t} value={t} className="bg-white dark:bg-slate-900">{t}</option>
+                ))}
+              </select>
+            </div>
+
+            {[
+              { label: 'Potencia Nominal (kW)', field: 'nominal_power_kw', step: '0.01', placeholder: '0.00', bold: true },
+              { label: 'Horas Uso/Día', field: 'daily_usage_hours', step: '0.5', placeholder: '24' },
+              { label: 'Eficiencia (%)', field: 'efficiency_percentage', placeholder: '85', blue: true },
+              { label: 'Ubicación / Zona', field: 'location', placeholder: 'Ej: Planta Norte' }
+            ].map((input, idx) => (
+              <div key={idx} className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] ml-1">{input.label}</label>
+                <input
+                  type={input.field === 'location' ? 'text' : 'number'}
+                  step={input.step || '1'}
+                  required={input.field !== 'location'}
+                  className={`w-full bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all ${input.bold ? 'font-bold' : 'font-medium'} ${input.blue ? 'text-blue-500' : ''}`}
+                  placeholder={input.placeholder}
+                  value={newAsset[input.field]}
+                  onChange={e => setNewAsset({ ...newAsset, [input.field]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-10 flex gap-6">
+            <Button type="button" variant="ghost" className="flex-1 h-16 font-bold" onClick={() => setModals(prev => ({ ...prev, add: false }))}>
+              Abortar Registro
+            </Button>
+            <Button type="submit" disabled={actions.isAdding} className="flex-[2] h-16 bg-blue-600 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/20 text-xs uppercase tracking-widest active:scale-95 transition-all">
+              {actions.isAdding ? <Loader2 className="animate-spin mr-3" size={24} /> : <Target className="mr-3" size={20} />}
+              Comisionar Equipo en Sistema
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

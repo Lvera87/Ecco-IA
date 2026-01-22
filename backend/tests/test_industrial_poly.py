@@ -1,5 +1,5 @@
 import pytest
-from polyfactory.factories.pydantic_factory import PydanticFactory
+from polyfactory.factories.pydantic_factory import ModelFactory as PydanticFactory
 from app.schemas.industrial_asset import IndustrialAssetCreate
 from httpx import AsyncClient
 
