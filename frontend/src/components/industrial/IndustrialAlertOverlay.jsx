@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Zap, ArrowRight, ShieldAlert, Timer, DollarSign } from 'lucide-react';
 import Card from '../ui/Card';
-import Button from '../components/ui/Button';
+import Button from '../ui/Button';
 
 /**
  * IndustrialAlertOverlay: Sistema de alerta de alto impacto con sentido común.
