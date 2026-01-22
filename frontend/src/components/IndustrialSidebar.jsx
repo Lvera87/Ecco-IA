@@ -1,11 +1,11 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Factory, LayoutDashboard, Globe, LogOut } from 'lucide-react';
+import { Factory, LayoutDashboard, Globe, LogOut, MessageSquareText, Settings } from 'lucide-react';
 
 const IndustrialSidebar = () => {
     const navItems = [
-        { to: "/industrial-dashboard", icon: LayoutDashboard, label: "Dashboard" },
-        { to: "/global-consumption", icon: Globe, label: "Consumo Global" },
+        { to: "/industrial-dashboard", icon: LayoutDashboard, label: "Dashboard IA" },
+        { to: "/data-assistant", icon: MessageSquareText, label: "Asistente Ecco" },
+        { to: "/global-consumption", icon: Globe, label: "Fugas y Desperdicio" },
+        { to: "/industrial-settings", icon: Settings, label: "Configuración Planta" },
     ];
 
     return (
