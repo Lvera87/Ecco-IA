@@ -46,9 +46,18 @@ export const useEnergyMath = () => {
             if (details.tv_check) vampireKwhMonthly += 5;
             if (config.appliances?.includes('bulbs_old')) vampireKwhMonthly += 10;
         } else {
-            // Industrial "Vampire" (Idle loads)
-            if (config.loads?.heavy_machinery) vampireKwhMonthly += projectedKwh * 0.05;
-            if (config.loads?.lighting) vampireKwhMonthly += projectedKwh * 0.02;
+            // Industrial "Waste" calculation based on Audit Questions
+            // If No VFD (motors detail is false or undefined) -> 15% waste on motor load
+            if (!details.motors) vampireKwhMonthly += (projectedKwh * 0.4) * 0.15;
+
+            // If No Power Quality (harmonic filters/caps) -> 5% waste in reactive penalties/heating
+            if (!details.power_quality) vampireKwhMonthly += projectedKwh * 0.05;
+
+            // If No SCADA/BMS -> 8% operational waste (lights on, machines idle)
+            if (!details.scada_bms) vampireKwhMonthly += projectedKwh * 0.08;
+
+            // Base leakage (air/steam leaks always present if not monitored)
+            vampireKwhMonthly += projectedKwh * 0.03;
         }
 
         const vampireMoneyLost = vampireKwhMonthly * kwhPrice;
@@ -62,12 +71,22 @@ export const useEnergyMath = () => {
         const energyIntensity = projectedKwh / floorArea;
         const efficiencyScore = isIndustrial ? Math.max(0, Math.min(100, 100 - ((energyIntensity / 20) * 20))).toFixed(1) : null;
 
-        // Load Estimates (Percent of total)
+        // Load Estimates (Percent of total) based on Industrial Zones
         const loadDist = [];
-        if (config.loads?.heavy_machinery) loadDist.push({ name: 'Maquinaria', value: projectedKwh * 0.5 });
-        if (config.loads?.hvac) loadDist.push({ name: 'Climatización', value: projectedKwh * 0.25 });
-        if (config.loads?.lighting) loadDist.push({ name: 'Iluminación', value: projectedKwh * 0.15 });
-        if (config.loads?.cooling) loadDist.push({ name: 'Refrigeración', value: projectedKwh * 0.1 });
+        if (isIndustrial) {
+            const selectedApps = config.appliances || [];
+            if (selectedApps.includes('motors') || selectedApps.includes('power_quality'))
+                loadDist.push({ name: 'Producción', value: projectedKwh * 0.55 });
+            if (selectedApps.includes('chillers') || selectedApps.includes('boilers'))
+                loadDist.push({ name: 'Térmico/HVAC', value: projectedKwh * 0.30 });
+            if (selectedApps.includes('high_bay') || selectedApps.includes('scada_bms'))
+                loadDist.push({ name: 'Gestión/Luz', value: projectedKwh * 0.15 });
+        } else {
+            if (config.loads?.heavy_machinery) loadDist.push({ name: 'Maquinaria', value: projectedKwh * 0.5 });
+            if (config.loads?.hvac) loadDist.push({ name: 'Climatización', value: projectedKwh * 0.25 });
+            if (config.loads?.lighting) loadDist.push({ name: 'Iluminación', value: projectedKwh * 0.15 });
+            if (config.loads?.cooling) loadDist.push({ name: 'Refrigeración', value: projectedKwh * 0.1 });
+        }
 
         return {
             latestReading,

@@ -78,6 +78,11 @@ const ZoneCard = ({ name, consumption, change, status, machines }) => {
 
 const GlobalConsumption = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const { consumptionHistory } = useApp();
   const { projectedKwh, co2Footprint, hasData } = useEnergyMath();
 
@@ -215,41 +220,42 @@ const GlobalConsumption = () => {
             </div>
 
             <div className="h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyData}>
-                  <defs>
-                    <linearGradient id="colorProduccion" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorLogistica" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorOficinas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-                    tickFormatter={(value) => `${value / 1000}K`}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="produccion" name="Producción" stroke="#3b82f6" strokeWidth={2} fill="url(#colorProduccion)" />
-                  <Area type="monotone" dataKey="logistica" name="Logística" stroke="#10b981" strokeWidth={2} fill="url(#colorLogistica)" />
-                  <Area type="monotone" dataKey="oficinas" name="Oficinas" stroke="#f59e0b" strokeWidth={2} fill="url(#colorOficinas)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              {isMounted && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={monthlyData}>
+                    <defs>
+                      <linearGradient id="colorProduccion" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorLogistica" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorOficinas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
+                    <XAxis
+                      dataKey="month"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                      tickFormatter={(value) => `${value / 1000}K`}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="produccion" name="Producción" stroke="#3b82f6" strokeWidth={2} fill="url(#colorProduccion)" />
+                    <Area type="monotone" dataKey="logistica" name="Logística" stroke="#10b981" strokeWidth={2} fill="url(#colorLogistica)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </Card>
 
@@ -258,23 +264,25 @@ const GlobalConsumption = () => {
             <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Distribución</h2>
 
             <div className="h-[200px] mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={distributionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {distributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              {isMounted && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={distributionData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {distributionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
 
             <div className="space-y-3">

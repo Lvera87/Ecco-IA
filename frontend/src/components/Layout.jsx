@@ -12,7 +12,6 @@ const Layout = ({ children }) => {
     '/global-consumption',
     '/carbon-footprint-industrial',
     '/industrial-settings',
-    '/industrial-config',
   ];
 
   const residentialRoutes = [

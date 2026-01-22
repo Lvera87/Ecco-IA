@@ -145,12 +145,17 @@ const ResultsDashboard = () => {
                 Distribución de Consumo
               </h3>
               <div className="space-y-4">
-                {[
+                {(isIndustrial ? [
+                  { name: 'Maquinaria Pesada', percentage: 60, color: 'bg-blue-600' },
+                  { name: 'Iluminación Industrial', percentage: 15, color: 'bg-amber-500' },
+                  { name: 'Sistemas HVAC', percentage: 15, color: 'bg-primary' },
+                  { name: 'Otros Procesos', percentage: 10, color: 'bg-slate-400' },
+                ] : [
                   { name: 'Climatización', percentage: 45, color: 'bg-primary' },
                   { name: 'Electrodomésticos', percentage: 30, color: 'bg-blue-500' },
                   { name: 'Iluminación', percentage: 15, color: 'bg-amber-500' },
                   { name: 'Otros', percentage: 10, color: 'bg-slate-400' },
-                ].map((item, idx) => (
+                ]).map((item, idx) => (
                   <div key={idx} className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="font-bold text-slate-700 dark:text-slate-300">{item.name}</span>
@@ -174,18 +179,24 @@ const ResultsDashboard = () => {
                 Recomendaciones
               </h3>
               <div className="space-y-4">
-                {[
+                {(isIndustrial ? [
+                  { priority: 'Alta', title: 'Optimizar turnos de carga pesada', savings: '$1,200/mes' },
+                  { priority: 'Media', title: 'Actualizar motores a alta eficiencia', savings: '$850/mes' },
+                  { priority: 'Baja', title: 'Sustitución LED en zona de carga', savings: '$320/mes' },
+                ] : [
                   { priority: 'Alta', title: 'Optimizar horario del aire acondicionado', savings: '$85/año' },
                   { priority: 'Media', title: 'Reemplazar bombillas incandescentes', savings: '$45/año' },
-                  { priority: 'Media', title: 'Desconectar standby de electrónicos', savings: '$30/año' },
-                ].map((rec, idx) => (
+                  { priority: 'Baja', title: 'Desconectar standby de electrónicos', savings: '$30/año' },
+                ]).map((rec, idx) => (
                   <div
                     key={idx}
                     className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded
-                        ${rec.priority === 'Alta' ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-amber-50 text-amber-600 dark:bg-amber-900/20'}`}>
+                        ${rec.priority === 'Alta' ? 'bg-red-50 text-red-600 dark:bg-red-900/20' :
+                          rec.priority === 'Media' ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20' :
+                            'bg-blue-50 text-blue-600 dark:bg-blue-900/20'}`}>
                         Prioridad {rec.priority}
                       </span>
                       <span className="text-sm font-black text-emerald-500">{rec.savings}</span>
