@@ -33,6 +33,11 @@ const CustomTooltip = ({ active, payload }) => {
 const Dashboard = () => {
   const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
   const [isConsumptionModalOpen, setIsConsumptionModalOpen] = useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const {
     appliances, missions, claimMission, iconMap, goals,
@@ -136,20 +141,22 @@ const Dashboard = () => {
                   <span className="text-2xl font-display font-medium text-slate-400 uppercase tracking-widest">kWh</span>
                 </div>
                 <div className="flex-1" style={{ minHeight: '250px' }}>
-                  <ResponsiveContainer width="100%" height={256}>
-                    <AreaChart data={energyData}>
-                      <defs>
-                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="time" hide />
-                      <YAxis hide domain={[0, 'auto']} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} fill="url(#colorValue)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  {isMounted && (
+                    <ResponsiveContainer width="100%" height={256}>
+                      <AreaChart data={energyData}>
+                        <defs>
+                          <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="time" hide />
+                        <YAxis hide domain={[0, 'auto']} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} fill="url(#colorValue)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
             ) : (
