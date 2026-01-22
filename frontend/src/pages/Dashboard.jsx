@@ -13,8 +13,10 @@ import InsightCard from '../components/ui/InsightCard';
 import EmptyState from '../components/ui/EmptyState';
 import GoalsModal from '../components/ui/GoalsModal';
 import ConsumptionModal from '../components/ui/ConsumptionModal';
+import ResidentialInsightAlert from '../components/ui/ResidentialInsightAlert';
 import { useApp } from '../context/AppContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
+import { residentialApi } from '../api/residential';
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -33,16 +35,78 @@ const CustomTooltip = ({ active, payload }) => {
 const Dashboard = () => {
   const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
   const [isConsumptionModalOpen, setIsConsumptionModalOpen] = useState(false);
+  const [showInsightAlert, setShowInsightAlert] = useState(true);
   const [isMounted, setIsMounted] = React.useState(false);
+  const [isReady, setIsReady] = React.useState(false);
 
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  React.useEffect(() => {
+    if (isMounted) {
+      const timer = setTimeout(() => setIsReady(true), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isMounted]);
+
   const {
     appliances, missions, claimMission, iconMap, goals,
-    consumptionHistory, addConsumptionReading
+    consumptionHistory, addConsumptionReading, setAppliances,
+    setConsumptionHistory, setUserProfile, updateGoals
   } = useApp();
+
+  const [loading, setLoading] = useState(true);
+  const [residentialInsights, setResidentialInsights] = useState(null);
+
+  React.useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [profile, assets, history, insights] = await Promise.all([
+        residentialApi.getProfile(),
+        residentialApi.getAssets(),
+        residentialApi.getConsumptionHistory(),
+        residentialApi.getDashboardInsights()
+      ]);
+
+      if (profile) {
+        setUserProfile(prev => ({ ...prev, type: 'residential', config: profile }));
+        updateGoals({ monthlyBudget: profile.target_monthly_bill });
+      }
+
+      if (assets) {
+        // Map backend assets back to frontend format if necessary
+        setAppliances(assets.map(a => ({
+          id: a.id,
+          name: a.name,
+          icon: a.icon,
+          consumption: a.monthly_cost_estimate / 30 / 850, // Reverse calc or use backend value
+          status: a.status,
+          category: a.category,
+          isHighImpact: a.is_high_impact
+        })));
+      }
+
+      if (history) {
+        setConsumptionHistory(history.map(r => ({
+          id: r.id,
+          date: r.date,
+          value: r.reading_value,
+          type: r.reading_type
+        })));
+      }
+
+      setResidentialInsights(insights);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const {
     latestReading, projectedKwh, projectedBill, vampireMoneyLost,
@@ -77,8 +141,23 @@ const Dashboard = () => {
     { time: '22:00', value: 0.65 },
   ] : [];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8 text-center">
+        <div className="size-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
+        <p className="mt-8 text-slate-500 font-display font-bold uppercase tracking-[0.2em] text-xs animate-pulse">Sincronizando con EccoIA Cloud...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-body relative overflow-x-hidden">
+      {showInsightAlert && residentialInsights && (
+        <ResidentialInsightAlert
+          insight={residentialInsights}
+          onClose={() => setShowInsightAlert(false)}
+        />
+      )}
       <main className="relative z-10 p-8 max-w-[1600px] mx-auto space-y-8">
 
         {/* Header */}
@@ -140,8 +219,8 @@ const Dashboard = () => {
                   <span className="text-6xl font-display font-bold text-slate-900 dark:text-white tracking-tighter">{latestReading}</span>
                   <span className="text-2xl font-display font-medium text-slate-400 uppercase tracking-widest">kWh</span>
                 </div>
-                <div className="flex-1" style={{ minHeight: '250px' }}>
-                  {isMounted && (
+                <div className="flex-1 w-full min-w-0" style={{ minHeight: '250px' }}>
+                  {isReady && (
                     <ResponsiveContainer width="100%" height={256}>
                       <AreaChart data={energyData}>
                         <defs>
@@ -174,24 +253,24 @@ const Dashboard = () => {
           {/* Vital Stats */}
           <StatCard
             title="Proyección Factura"
-            value={formatMoney(projectedBill)}
+            value={residentialInsights ? formatMoney(residentialInsights.projected_bill) : formatMoney(projectedBill)}
             unit="/ mes"
             icon={DollarSign}
             color="emerald"
           />
           <StatCard
             title="Costo Vampiro"
-            value={formatMoney(vampireMoneyLost)}
+            value={residentialInsights ? formatMoney(residentialInsights.vampire_cost_monthly) : formatMoney(vampireMoneyLost)}
             unit="/ mes"
             icon={TrendingDown}
-            color={vampireMoneyLost > 25000 ? "red" : "amber"}
+            color={(residentialInsights?.vampire_cost_monthly || vampireMoneyLost) > 25000 ? "red" : "amber"}
           />
           <StatCard
-            title="Consumo Per Cápita"
-            value={kwhPerPerson.toFixed(1)}
-            unit="kWh / mes"
+            title="Eficiencia Eco"
+            value={residentialInsights ? residentialInsights.efficiency_score : 85}
+            unit="%"
             icon={Award}
-            color={efficiencyStatus === 'excellent' ? "emerald" : efficiencyStatus === 'good' ? "blue" : "red"}
+            color={(residentialInsights?.efficiency_score || 85) > 80 ? "emerald" : "blue"}
           />
           <StatCard
             title="Meta de Ahorro"
@@ -244,8 +323,12 @@ const Dashboard = () => {
                   </div>
                   <span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-500/20">Misión Activa</span>
                 </div>
-                <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white">{suggestedMission.title}</h3>
-                <p className="text-slate-500 dark:text-slate-400 text-sm mt-2 leading-relaxed">{suggestedMission.description}</p>
+                <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white">
+                  {residentialInsights ? "Recomendación de Gemini" : suggestedMission.title}
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-2 leading-relaxed">
+                  {residentialInsights ? residentialInsights.ai_advice : suggestedMission.description}
+                </p>
               </div>
 
               <div className="mt-6 flex items-center justify-between">

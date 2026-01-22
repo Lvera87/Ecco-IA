@@ -12,11 +12,16 @@ export const industrialApi = {
         return response.data;
     },
 
-    /**
-     * Create a new industrial asset
-     */
     createAsset: async (assetData) => {
         const response = await client.post('/industrial/assets', assetData);
+        return response.data;
+    },
+
+    /**
+     * Create multiple industrial assets in one batch
+     */
+    createAssetBatch: async (assets) => {
+        const response = await client.post('/industrial/assets/batch', { assets });
         return response.data;
     },
 
@@ -33,6 +38,35 @@ export const industrialApi = {
      */
     askAssistant: async (message) => {
         const response = await client.post(`/industrial/assistant/chat?message=${encodeURIComponent(message)}`);
+        return response.data;
+    },
+
+    /**
+     * Get consumption analysis by zone
+     */
+    getConsumptionAnalysis: async () => {
+        const response = await client.get('/industrial/consumption-analysis');
+        return response.data;
+    },
+
+    deleteAsset: async (assetId) => {
+        const response = await client.delete(`/industrial/assets/${assetId}`);
+        return response.data;
+    },
+
+    /**
+     * Save an ROI scenario for an asset
+     */
+    saveRoiScenario: async (assetId, roiData) => {
+        const response = await client.post(`/industrial/assets/${assetId}/roi-scenarios`, roiData);
+        return response.data;
+    },
+
+    /**
+     * Get ROI scenarios for an asset
+     */
+    getRoiScenarios: async (assetId) => {
+        const response = await client.get(`/industrial/assets/${assetId}/roi-scenarios`);
         return response.data;
     }
 };

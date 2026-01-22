@@ -285,6 +285,8 @@ export const AppProvider = ({ children }) => {
 
         // Actions
         setUserProfile,
+        setAppliances,
+        setConsumptionHistory,
         setProfileType,
         addXP,
         addAppliance,

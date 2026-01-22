@@ -18,6 +18,9 @@ from app.db.session import get_async_engine
 # Import all models here so they are registered with Base.metadata
 from app.models.user import User
 from app.models.industrial_asset import IndustrialAsset
+from app.models.industrial_settings import IndustrialSettings
+from app.models.roi_scenario import RoiScenario
+from app.models.residential import ResidentialProfile, ResidentialAsset, ConsumptionReading
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
