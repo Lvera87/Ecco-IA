@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     # JWT / Auth settings
     secret_key: str = "CHANGE_ME_TO_A_RANDOM_SECRET"
     access_token_expire_minutes: int = 60 * 24 * 7  # one week by default
+
+    # Gemini settings
+    gemini_api_key: str | None = None
+    gemini_model_name: str = "gemini-2.5-flash-lite" # Requested by user
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @field_validator("backend_cors_origins", mode="before")

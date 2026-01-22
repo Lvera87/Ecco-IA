@@ -15,6 +15,10 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_async_engine
 
+# Import all models here so they are registered with Base.metadata
+from app.models.user import User
+from app.models.industrial_asset import IndustrialAsset
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
