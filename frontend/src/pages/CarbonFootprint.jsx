@@ -18,7 +18,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       <div className="bg-slate-900/95 border border-slate-700/50 backdrop-blur-md p-3 rounded-xl shadow-2xl">
         <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">{label}</p>
         <p className="text-xl font-black text-emerald-400">
-          {payload[0].value.toFixed(1)} <span className="text-xs font-medium text-slate-500">kg CO₂</span>
+          {(payload[0].value || 0).toFixed(1)} <span className="text-xs font-medium text-slate-500">kg CO₂</span>
         </p>
       </div>
     );
@@ -29,27 +29,27 @@ const CustomTooltip = ({ active, payload, label }) => {
 const CarbonFootprint = () => {
   const { userProfile, consumptionHistory } = useApp();
   const {
-    co2Footprint, hasData, enrichedAppliances,
-    CO2_FACTOR
+    co2Footprint = 0, hasData, enrichedAppliances = [],
+    CO2_FACTOR = 0.164
   } = useEnergyMath();
 
   const config = userProfile?.config || {};
   const details = config.applianceDetails || {};
 
   // Procesar historial para CO2
-  const monthlyData = consumptionHistory.map(entry => ({
+  const monthlyData = (consumptionHistory || []).map(entry => ({
     name: new Date(entry.date).toLocaleDateString('es-CO', { weekday: 'short' }),
-    value: entry.value * CO2_FACTOR
+    value: (entry.value || 0) * CO2_FACTOR
   }));
 
   // Desglose por fuente (Real según inventario)
   const carbonSources = enrichedAppliances
-    .sort((a, b) => b.monthlyCost - a.monthlyCost)
+    .sort((a, b) => (b.monthlyCost || 0) - (a.monthlyCost || 0))
     .slice(0, 4)
     .map(app => ({
       name: app.name,
-      amount: Math.round(app.monthlyCost / 850 * CO2_FACTOR), // Estimado
-      percentage: Math.round((app.monthlyCost / (co2Footprint * 850 / CO2_FACTOR)) * 100) || 25,
+      amount: Math.round((app.monthlyCost || 0) / 850 * CO2_FACTOR), // Estimado
+      percentage: Math.round(((app.monthlyCost || 0) / (Math.max(co2Footprint, 1) * 850 / CO2_FACTOR)) * 100) || 25,
       color: app.icon === 'Refrigerator' ? '#f59e0b' : app.icon === 'AirVent' ? '#3b82f6' : '#10b981'
     }));
 
@@ -79,7 +79,7 @@ const CarbonFootprint = () => {
     difficulty: 'easy'
   });
 
-  const treesEquivalent = Math.round(co2Footprint / 2); // 1 árbol absorbe aprox 20kg/año -> 1.6kg/mes
+  const treesEquivalent = Math.round((co2Footprint || 0) / 2); // 1 árbol absorbe aprox 20kg/año -> 1.6kg/mes
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 pt-6">

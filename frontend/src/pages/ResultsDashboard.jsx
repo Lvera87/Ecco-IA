@@ -7,35 +7,10 @@ import {
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { useApp } from '../context/AppContext';
+import { useEnergyMath } from '../hooks/useEnergyMath';
+import StatCardShared from '../components/ui/StatCard';
 
-// Stat Card Component
-const StatCard = ({ icon: Icon, title, value, unit, badge, badgeColor = 'green' }) => {
-  const badgeColors = {
-    green: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
-    amber: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
-    slate: 'text-slate-400 bg-slate-100 dark:bg-slate-800'
-  };
-
-  return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="size-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-          <Icon size={28} />
-        </div>
-        {badge && (
-          <span className={`text-xs font-bold px-2 py-1 rounded ${badgeColors[badgeColor]}`}>
-            {badge}
-          </span>
-        )}
-      </div>
-      <h3 className="text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider mb-1">{title}</h3>
-      <div className="text-4xl font-display font-black text-slate-900 dark:text-white">
-        {value}
-        {unit && <span className="text-lg text-slate-400"> {unit}</span>}
-      </div>
-    </Card>
-  );
-};
 
 // Quick Tip Card Component  
 const QuickTipCard = ({ icon: Icon, title, description }) => (
@@ -52,12 +27,44 @@ const QuickTipCard = ({ icon: Icon, title, description }) => (
 
 const ResultsDashboard = () => {
   const navigate = useNavigate();
+  const { userProfile } = useApp();
+  const {
+    efficiencyScore, projectedBill, co2Footprint,
+    formatMoney, isIndustrial
+  } = useEnergyMath();
 
   const stats = [
-    { icon: Gauge, title: 'Puntaje de Eficiencia', value: '84', unit: '/100', badge: '+12% vs mes ant.', badgeColor: 'green' },
-    { icon: Wallet, title: 'Ahorro Anual Potencial', value: '$420', unit: 'USD', badge: 'Est.', badgeColor: 'slate' },
-    { icon: Leaf, title: 'Reducción de CO2', value: '15', unit: '%', badge: '-2.4t', badgeColor: 'green' },
-    { icon: Award, title: 'Rango Eco', value: 'Oro', badge: 'Top 5%', badgeColor: 'amber' },
+    {
+      icon: Gauge,
+      title: 'Puntaje de Eficiencia',
+      value: efficiencyScore || '84',
+      unit: '/100',
+      badge: '+12% vs mes ant.',
+      badgeColor: 'green'
+    },
+    {
+      icon: Wallet,
+      title: isIndustrial ? 'Facturación Estimada' : 'Ahorro Potencial',
+      value: isIndustrial ? formatMoney(projectedBill) : '$420',
+      unit: isIndustrial ? '' : 'USD',
+      badge: 'Est.',
+      badgeColor: 'slate'
+    },
+    {
+      icon: Leaf,
+      title: 'Huella de CO2',
+      value: Math.round(co2Footprint).toLocaleString(),
+      unit: 'kg',
+      badge: '-2.4t',
+      badgeColor: 'green'
+    },
+    {
+      icon: Award,
+      title: 'Rango Eco',
+      value: isIndustrial ? 'Platino' : 'Oro',
+      badge: 'Top 5%',
+      badgeColor: 'amber'
+    },
   ];
 
   const tips = [
@@ -104,7 +111,7 @@ const ResultsDashboard = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {stats.map((stat, idx) => (
-              <StatCard key={idx} {...stat} />
+              <StatCardShared key={idx} {...stat} color={stat.icon === Gauge ? 'primary' : stat.icon === Wallet ? 'emerald' : stat.icon === Leaf ? 'purple' : 'amber'} />
             ))}
           </div>
 
@@ -196,7 +203,7 @@ const ResultsDashboard = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate(userProfile?.type === 'industrial' ? '/industrial-dashboard' : '/dashboard')}
               variant="primary"
               size="lg"
               icon={LayoutDashboard}

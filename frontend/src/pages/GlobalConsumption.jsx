@@ -10,6 +10,10 @@ import {
 } from 'recharts';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import StatCard from '../components/ui/StatCard';
+import EmptyState from '../components/ui/EmptyState';
+import { useEnergyMath } from '../hooks/useEnergyMath';
+import { useApp } from '../context/AppContext';
 
 // Custom Tooltip
 const CustomTooltip = ({ active, payload, label }) => {
@@ -74,8 +78,10 @@ const ZoneCard = ({ name, consumption, change, status, machines }) => {
 
 const GlobalConsumption = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const { consumptionHistory } = useApp();
+  const { projectedKwh, co2Footprint, hasData } = useEnergyMath();
 
-  // Monthly consumption by zone
+  // Monthly consumption by zone (Mock extended for better chart)
   const monthlyData = [
     { month: 'Ene', produccion: 145000, logistica: 45000, oficinas: 28000 },
     { month: 'Feb', produccion: 138000, logistica: 42000, oficinas: 26000 },
@@ -101,9 +107,8 @@ const GlobalConsumption = () => {
     { name: 'Almacén', value: 8, color: '#8b5cf6' },
   ];
 
-  const totalConsumption = 450230;
   const monthlyGoal = 500000;
-  const goalProgress = (totalConsumption / monthlyGoal) * 100;
+  const goalProgress = (projectedKwh / monthlyGoal) * 100;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
@@ -136,7 +141,8 @@ const GlobalConsumption = () => {
               ))}
             </div>
 
-            <Button variant="ghost" size="md" icon={Download} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <Button variant="ghost" size="md" className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <Download size={18} className="mr-2" />
               Exportar
             </Button>
           </div>
@@ -144,39 +150,33 @@ const GlobalConsumption = () => {
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 border-none text-white">
-            <div className="flex items-center gap-4">
-              <div className="size-14 rounded-xl bg-white/20 flex items-center justify-center">
-                <Zap size={28} />
-              </div>
-              <div>
-                <p className="text-white/80 text-[10px] font-bold uppercase tracking-wider">Consumo Mensual</p>
-                <p className="text-3xl font-black">{(totalConsumption / 1000).toFixed(0)}K <span className="text-lg">kWh</span></p>
-              </div>
-            </div>
-          </Card>
+          <StatCard
+            title="Consumo Mensual"
+            value={Math.round(projectedKwh / 1000).toLocaleString()}
+            unit="K kWh"
+            icon={Zap}
+            color="blue"
+          />
 
-          <Card className="p-6 flex items-center gap-4">
-            <div className="size-14 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
-              <TrendingDown size={28} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ahorro vs Meta</p>
-              <p className="text-3xl font-black text-emerald-500">-10<span className="text-lg text-slate-400">%</span></p>
-            </div>
-          </Card>
+          <StatCard
+            title="Eficiencia Global"
+            value="-10"
+            unit="%"
+            icon={TrendingDown}
+            color="emerald"
+            trend="down"
+            trendValue={2.4}
+          />
 
-          <Card className="p-6 flex items-center gap-4">
-            <div className="size-14 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600">
-              <AlertTriangle size={28} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alertas Activas</p>
-              <p className="text-3xl font-black text-slate-800 dark:text-white">3</p>
-            </div>
-          </Card>
+          <StatCard
+            title="Huella CO2"
+            value={Math.round(co2Footprint).toLocaleString()}
+            unit="kg"
+            icon={Globe}
+            color="purple"
+          />
 
-          <Card className="p-6">
+          <Card className="p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Meta Mensual</span>
               <span className="text-sm font-bold text-blue-500">{goalProgress.toFixed(1)}%</span>
@@ -187,14 +187,14 @@ const GlobalConsumption = () => {
                 style={{ width: `${Math.min(goalProgress, 100)}%` }}
               />
             </div>
-            <p className="text-xs text-slate-500 mt-2">{totalConsumption.toLocaleString()} / {monthlyGoal.toLocaleString()} kWh</p>
+            <p className="text-xs text-slate-500 mt-2">{Math.round(projectedKwh).toLocaleString()} / {monthlyGoal.toLocaleString()} kWh</p>
           </Card>
         </div>
 
         {/* Main Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Consumption by Zone Chart */}
-          <Card className="lg:col-span-2 p-8">
+          <Card className="lg:col-span-2 p-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-xl font-bold text-slate-800 dark:text-white">Consumo por Zona</h2>
@@ -254,7 +254,7 @@ const GlobalConsumption = () => {
           </Card>
 
           {/* Distribution Pie */}
-          <Card className="p-8">
+          <Card className="p-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
             <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Distribución</h2>
 
             <div className="h-[200px] mb-6">
