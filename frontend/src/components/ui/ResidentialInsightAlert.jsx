@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sparkles, X, TrendingUp, Wallet, ArrowRight, Lightbulb } from 'lucide-react';
-import Card from '../ui/Card';
-import Button from '../components/ui/Button';
+import Card from './Card';
+import Button from './Button';
 
 const ResidentialInsightAlert = ({ insight, onClose }) => {
     if (!insight) return null;

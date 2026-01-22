@@ -7,22 +7,22 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.db.session import get_async_session
 from app.models.user import User
-from app.core.security import decode_token
+from app.core.security import decode_token, get_password_hash
 
 settings = get_settings()
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.api_v1_prefix}/auth/login",
-    auto_error=True # Forzamos error si no hay token en rutas protegidas
+    auto_error=not settings.dev_mode  # No error en dev mode si no hay token
 )
 
 async def get_current_user(
     db: AsyncSession = Depends(get_async_session),
-    token: str = Depends(oauth2_scheme)
+    token: Optional[str] = Depends(oauth2_scheme)
 ) -> User:
     """
     Dependency para obtener el usuario actual desde el JWT.
-    Senior standard: No permite accesos anónimos en rutas autenticadas.
+    En dev_mode, permite acceso sin token creando un usuario de desarrollo.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -30,8 +30,28 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
+    # DEV MODE: Bypass para desarrollo local
+    if settings.dev_mode and not token:
+        result = await db.execute(select(User).where(User.username == "developer"))
+        dev_user = result.scalar_one_or_none()
+        
+        if not dev_user:
+            dev_user = User(
+                username="developer",
+                email="dev@ecco-ia.local",
+                full_name="Developer Ecco-IA",
+                hashed_password=get_password_hash("dev123")
+            )
+            db.add(dev_user)
+            await db.commit()
+            await db.refresh(dev_user)
+        return dev_user
+    
+    # PRODUCTION MODE: Validación JWT estricta
+    if not token:
+        raise credentials_exception
+    
     try:
-        # Validamos explícitamente que sea un token de tipo 'access'
         payload = decode_token(token, expected_type="access")
         user_id: str = payload.get("sub")
         if user_id is None:
@@ -51,5 +71,4 @@ async def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Verifica además que el usuario no esté bloqueado o inactivo."""
-    # Aquí podrías añadir: if not current_user.is_active: raise ...
     return current_user
