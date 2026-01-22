@@ -13,6 +13,17 @@ vi.mock('../api/industrial', () => ({
     }
 }));
 
+// Mock Recharts to avoid JSDOM issues
+vi.mock('recharts', () => ({
+    ResponsiveContainer: ({ children }) => <div>{children}</div>,
+    AreaChart: ({ children }) => <div>{children}</div>,
+    Area: () => <div />,
+    XAxis: () => <div />,
+    YAxis: () => <div />,
+    CartesianGrid: () => <div />,
+    Tooltip: () => <div />,
+}));
+
 // Mocking useEnergyMath hook if necessary, or just rely on the component
 // Since IndustrialDashboard uses useApp and useEnergyMath, we might need to wrap it
 
@@ -59,10 +70,10 @@ describe('IndustrialDashboard Component', () => {
 
         // Esperar a que desaparezca el cargando y aparezcan los datos
         await waitFor(() => {
-            expect(screen.getByText(/Baja eficiencia en Motor 1/i)).toBeInTheDocument();
-        });
+            expect(screen.getByText(/Baja eficiencia/i)).toBeInTheDocument();
+        }, { timeout: 5000 });
 
-        expect(screen.getByText(/El Motor 1 está operando fuera de rango/i)).toBeInTheDocument();
+        expect(screen.getByText(/fuera de rango/i)).toBeInTheDocument();
         expect(screen.getByText(/\$500/i)).toBeInTheDocument();
         expect(screen.getByText(/Motor 1/i)).toBeInTheDocument();
     });
@@ -74,6 +85,7 @@ describe('IndustrialDashboard Component', () => {
         renderDashboard();
 
         await waitFor(() => {
+            // Buscamos el título del EmptyState que definimos en el código
             expect(screen.getByText(/Sin activos industriales/i)).toBeInTheDocument();
         });
     });

@@ -1,0 +1,4 @@
+.\backend\.venv\Scripts\uvicorn app.main:app --reload --app-dir backend
+
+
+cd frontend; npm run dev

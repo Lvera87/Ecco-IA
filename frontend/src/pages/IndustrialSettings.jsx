@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings, Bell, Shield, User, Building2, Zap, Globe,
   Moon, Sun, ChevronRight, Save, Lock, Mail, Phone,
   CreditCard, FileText, HelpCircle, LogOut, AlertTriangle,
-  CheckCircle, Trash2, RefreshCw
+  CheckCircle, Trash2, RefreshCw, Loader2
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { settingsApi } from '../api/settings';
 
 // Toggle Switch Component
 const ToggleSwitch = ({ enabled, onChange, disabled = false }) => (
@@ -45,7 +46,7 @@ const SettingItem = ({ icon: Icon, title, description, children, danger = false 
 
 // Settings Section Component
 const SettingsSection = ({ icon: Icon, title, children }) => (
-  <Card className="p-6 mb-6">
+  <Card className="p-6 mb-6 overflow-visible">
     <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
       <Icon className="text-blue-500" size={24} />
       <h3 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h3>
@@ -59,45 +60,89 @@ const SettingsSection = ({ icon: Icon, title, children }) => (
 const IndustrialSettings = () => {
   // Settings state
   const [settings, setSettings] = useState({
-    // Notifications
-    emailAlerts: true,
-    smsAlerts: false,
-    pushNotifications: true,
-    dailyReports: true,
-    weeklyReports: true,
-    criticalAlerts: true,
-
-    // Display
-    darkMode: false,
-    compactView: false,
-    showCO2: true,
-
-    // Security
-    twoFactor: true,
-    sessionTimeout: '30',
-
-    // Energy
-    autoOptimize: true,
-    peakAlerts: true,
-    budgetAlerts: true,
+    company_name: '',
+    industry_sector: 'Manufactura',
+    contact_email: '',
+    monthly_budget_limit: 50000.0,
+    auto_optimize: true,
+    email_alerts: true,
+    sms_alerts: false,
+    push_notifications: true,
+    critical_alerts: true,
+    dark_mode: false,
+    show_co2: true,
   });
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await settingsApi.getSettings();
+        setSettings(data);
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+        setMessage({ text: 'Error al cargar la configuración.', type: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   const updateSetting = (key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage({ text: '', type: '' });
+    try {
+      const updated = await settingsApi.updateSettings(settings);
+      setSettings(updated);
+      setMessage({ text: 'Configuración guardada exitosamente.', type: 'success' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setMessage({ text: 'Error al guardar los cambios.', type: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <Loader2 className="text-blue-500 animate-spin" size={48} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 pb-24">
       <div className="max-w-[900px] mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-2 flex items-center gap-3">
-            <Settings className="text-blue-500" size={32} />
-            Configuración Industrial
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400">
-            Administra las preferencias del sistema de gestión energética.
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-2 flex items-center gap-3">
+              <Settings className="text-blue-500" size={32} />
+              Configuración Industrial
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400">
+              Administra las preferencias del sistema de gestión energética.
+            </p>
+          </div>
+
+          {message.text && (
+            <div className={`px-4 py-2 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300 ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'
+              }`}>
+              {message.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+              <span className="text-sm font-bold">{message.text}</span>
+            </div>
+          )}
         </div>
 
         {/* Profile Section */}
@@ -109,19 +154,28 @@ const IndustrialSettings = () => {
               </label>
               <input
                 type="text"
-                defaultValue="Industrias XYZ S.A."
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5"
+                value={settings.company_name}
+                onChange={(e) => updateSetting('company_name', e.target.value)}
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5 px-4 outline-none transition-all"
               />
             </div>
             <div>
               <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
                 Sector Industrial
               </label>
-              <select className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5">
-                <option>Manufactura</option>
-                <option>Logística</option>
-                <option>Comercio</option>
-                <option>Salud</option>
+              <select
+                value={settings.industry_sector}
+                onChange={(e) => updateSetting('industry_sector', e.target.value)}
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5 px-4 outline-none transition-all"
+              >
+                <option value="Manufactura">Manufactura General</option>
+                <option value="Alimentos">Alimentos y Bebidas</option>
+                <option value="Textil">Textil y Moda</option>
+                <option value="Química">Química y Petróleo</option>
+                <option value="Logística">Logística y Almacenamiento</option>
+                <option value="Comercio">Retail / Gran Superficie</option>
+                <option value="Salud">Centros de Salud / Hospitales</option>
+                <option value="Minería">Minería y Energía</option>
               </select>
             </div>
             <div>
@@ -130,18 +184,39 @@ const IndustrialSettings = () => {
               </label>
               <input
                 type="email"
-                defaultValue="energia@industriasxyz.com"
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5"
+                value={settings.contact_email || ''}
+                onChange={(e) => updateSetting('contact_email', e.target.value)}
+                placeholder="ejemplo@empresa.com"
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5 px-4 outline-none transition-all"
               />
             </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                Teléfono
-              </label>
+          </div>
+        </SettingsSection>
+
+        {/* Energy Management */}
+        <SettingsSection icon={Zap} title="Gestión Energética">
+          <SettingItem
+            icon={RefreshCw}
+            title="Optimización Automática"
+            description="La IA ajusta parámetros en tiempo real para máxima eficiencia"
+          >
+            <ToggleSwitch
+              enabled={settings.auto_optimize}
+              onChange={(v) => updateSetting('auto_optimize', v)}
+            />
+          </SettingItem>
+
+          <div className="pt-4 max-w-xs">
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+              Límite de Presupuesto Mensual (COP)
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
               <input
-                type="tel"
-                defaultValue="+57 1 234 5678"
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5"
+                type="number"
+                value={settings.monthly_budget_limit}
+                onChange={(e) => updateSetting('monthly_budget_limit', parseFloat(e.target.value))}
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5 pl-8 pr-4 outline-none transition-all"
               />
             </div>
           </div>
@@ -152,219 +227,96 @@ const IndustrialSettings = () => {
           <SettingItem
             icon={Mail}
             title="Alertas por Email"
-            description="Recibir notificaciones de consumo por correo"
+            description="Recibir resúmenes y alertas críticas por correo"
           >
             <ToggleSwitch
-              enabled={settings.emailAlerts}
-              onChange={(v) => updateSetting('emailAlerts', v)}
+              enabled={settings.email_alerts}
+              onChange={(v) => updateSetting('email_alerts', v)}
             />
           </SettingItem>
 
           <SettingItem
             icon={Phone}
             title="Alertas SMS"
-            description="Notificaciones críticas vía mensaje de texto"
+            description="Notificaciones de emergencia directo a tu móvil"
           >
             <ToggleSwitch
-              enabled={settings.smsAlerts}
-              onChange={(v) => updateSetting('smsAlerts', v)}
+              enabled={settings.sms_alerts}
+              onChange={(v) => updateSetting('sms_alerts', v)}
             />
           </SettingItem>
 
           <SettingItem
             icon={Bell}
             title="Notificaciones Push"
-            description="Alertas en tiempo real en el navegador"
+            description="Alertas instantáneas en el panel de control"
           >
             <ToggleSwitch
-              enabled={settings.pushNotifications}
-              onChange={(v) => updateSetting('pushNotifications', v)}
-            />
-          </SettingItem>
-
-          <SettingItem
-            icon={FileText}
-            title="Reportes Diarios"
-            description="Resumen automático de consumo cada día"
-          >
-            <ToggleSwitch
-              enabled={settings.dailyReports}
-              onChange={(v) => updateSetting('dailyReports', v)}
+              enabled={settings.push_notifications}
+              onChange={(v) => updateSetting('push_notifications', v)}
             />
           </SettingItem>
 
           <SettingItem
             icon={AlertTriangle}
-            title="Alertas Críticas"
-            description="Notificaciones de picos y anomalías"
+            title="Alertas de Anomalías IA"
+            description="Aviso inmediato cuando la IA detecta desperdicio líquido"
           >
             <ToggleSwitch
-              enabled={settings.criticalAlerts}
-              onChange={(v) => updateSetting('criticalAlerts', v)}
+              enabled={settings.critical_alerts}
+              onChange={(v) => updateSetting('critical_alerts', v)}
             />
           </SettingItem>
         </SettingsSection>
 
-        {/* Energy Management */}
-        <SettingsSection icon={Zap} title="Gestión Energética">
-          <SettingItem
-            icon={RefreshCw}
-            title="Optimización Automática"
-            description="IA ajusta parámetros para máxima eficiencia"
-          >
-            <ToggleSwitch
-              enabled={settings.autoOptimize}
-              onChange={(v) => updateSetting('autoOptimize', v)}
-            />
-          </SettingItem>
-
-          <SettingItem
-            icon={AlertTriangle}
-            title="Alertas de Pico"
-            description="Aviso cuando se acerca al límite contratado"
-          >
-            <ToggleSwitch
-              enabled={settings.peakAlerts}
-              onChange={(v) => updateSetting('peakAlerts', v)}
-            />
-          </SettingItem>
-
-          <SettingItem
-            icon={CreditCard}
-            title="Alertas de Presupuesto"
-            description="Notificar cuando el gasto excede el límite"
-          >
-            <ToggleSwitch
-              enabled={settings.budgetAlerts}
-              onChange={(v) => updateSetting('budgetAlerts', v)}
-            />
-          </SettingItem>
-
-          <div className="pt-4">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-              Límite de Presupuesto Mensual
-            </label>
-            <div className="relative max-w-xs">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-              <input
-                type="number"
-                defaultValue="50000"
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5 pl-8"
-              />
-            </div>
-          </div>
-        </SettingsSection>
-
-        {/* Display Settings */}
+        {/* Visual Settings */}
         <SettingsSection icon={Globe} title="Visualización">
           <SettingItem
             icon={Moon}
             title="Modo Oscuro"
-            description="Interfaz con tema oscuro"
+            description="Activar interfaz visual de alto contraste"
           >
             <ToggleSwitch
-              enabled={settings.darkMode}
-              onChange={(v) => updateSetting('darkMode', v)}
-            />
-          </SettingItem>
-
-          <SettingItem
-            icon={Building2}
-            title="Vista Compacta"
-            description="Mostrar más información en menos espacio"
-          >
-            <ToggleSwitch
-              enabled={settings.compactView}
-              onChange={(v) => updateSetting('compactView', v)}
+              enabled={settings.dark_mode}
+              onChange={(v) => updateSetting('dark_mode', v)}
             />
           </SettingItem>
 
           <SettingItem
             icon={Zap}
-            title="Mostrar CO₂"
-            description="Visualizar emisiones junto al consumo"
+            title="Mostrar Huella CO₂"
+            description="Visualizar el impacto ambiental junto al consumo"
           >
             <ToggleSwitch
-              enabled={settings.showCO2}
-              onChange={(v) => updateSetting('showCO2', v)}
+              enabled={settings.show_co2}
+              onChange={(v) => updateSetting('show_co2', v)}
             />
           </SettingItem>
         </SettingsSection>
 
-        {/* Security Settings */}
-        <SettingsSection icon={Shield} title="Seguridad">
-          <SettingItem
-            icon={Lock}
-            title="Autenticación de Dos Factores"
-            description="Capa adicional de seguridad para acceso"
-          >
-            <ToggleSwitch
-              enabled={settings.twoFactor}
-              onChange={(v) => updateSetting('twoFactor', v)}
-            />
-          </SettingItem>
-
-          <div className="py-4">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-              Tiempo de Sesión Inactiva (minutos)
-            </label>
-            <select
-              value={settings.sessionTimeout}
-              onChange={(e) => updateSetting('sessionTimeout', e.target.value)}
-              className="w-full max-w-xs rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-blue-500 focus:border-blue-500 py-2.5"
+        {/* Save Bar (Fixed at bottom) */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-4 z-50">
+          <div className="max-w-[900px] mx-auto flex justify-between items-center">
+            <span className="text-sm text-slate-500 hidden md:block">Los cambios se aplicarán a toda la organización.</span>
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-blue-600 hover:bg-blue-500 text-white min-w-[200px]"
+              size="lg"
             >
-              <option value="15">15 minutos</option>
-              <option value="30">30 minutos</option>
-              <option value="60">1 hora</option>
-              <option value="120">2 horas</option>
-            </select>
-          </div>
-
-          <div className="pt-4 flex gap-4">
-            <Button variant="ghost" className="border border-slate-200 dark:border-slate-700">
-              Cambiar Contraseña
-            </Button>
-            <Button variant="ghost" className="border border-slate-200 dark:border-slate-700">
-              Ver Historial de Acceso
+              {saving ? (
+                <>
+                  <Loader2 size={18} className="mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save size={18} className="mr-2" />
+                  Guardar Configuración
+                </>
+              )}
             </Button>
           </div>
-        </SettingsSection>
-
-        {/* Danger Zone */}
-        <Card className="p-6 border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-red-200 dark:border-red-900/30">
-            <AlertTriangle className="text-red-600" size={24} />
-            <h3 className="text-lg font-bold text-red-600">Zona de Peligro</h3>
-          </div>
-
-          <SettingItem
-            icon={Trash2}
-            title="Eliminar Datos Históricos"
-            description="Borra permanentemente el historial de consumo"
-            danger
-          >
-            <Button variant="danger" size="sm">
-              Eliminar
-            </Button>
-          </SettingItem>
-
-          <SettingItem
-            icon={LogOut}
-            title="Cerrar Todas las Sesiones"
-            description="Desconecta todos los dispositivos activos"
-            danger
-          >
-            <Button variant="danger" size="sm">
-              Cerrar
-            </Button>
-          </SettingItem>
-        </Card>
-
-        {/* Save Button */}
-        <div className="flex justify-end mt-8">
-          <Button className="bg-blue-500 hover:bg-blue-600" size="lg" icon={Save}>
-            Guardar Cambios
-          </Button>
         </div>
       </div>
     </div>

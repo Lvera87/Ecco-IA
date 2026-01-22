@@ -1,8 +1,6 @@
-"""User model definition."""
 from sqlalchemy import Column, Integer, String
-
+from sqlalchemy.orm import relationship
 from app.db.base import Base
-
 
 class User(Base):
     __tablename__ = "users"
@@ -12,4 +10,7 @@ class User(Base):
     email = Column(String(120), unique=True, index=True, nullable=False)
     full_name = Column(String(120), nullable=True)
     hashed_password = Column(String(128), nullable=False)
+
+    # Relaciones
+    gamification_profile = relationship("GamificationProfile", back_populates="user", uselist=False)
 

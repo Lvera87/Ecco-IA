@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   Receipt,
@@ -37,12 +37,12 @@ const ResidentialSidebar = () => {
   return (
     <>
       <aside className="w-72 bg-slate-950 h-full flex flex-col p-6 text-slate-300 shrink-0 border-r border-slate-900">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="p-2 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/20">
+        <Link to="/" className="flex items-center gap-3 mb-10 px-2 group cursor-pointer decoration-none">
+          <div className="p-2 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
             <Zap size={24} className="text-slate-950" fill="currentColor" />
           </div>
           <h1 className="text-2xl font-display font-bold tracking-tight text-white leading-none">EccoIA</h1>
-        </div>
+        </Link>
 
         <nav className="flex-1 space-y-1.5">
           {navItems.map((item) => (

@@ -9,12 +9,29 @@ import {
 import { useApp } from '../context/AppContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { industrialApi } from '../api/industrial';
+import { settingsApi } from '../api/settings';
 
 // 1. DATA MODELS (CALCO DE RESIDENCIAL ADAPTADO A INDUSTRIA)
 const houseTypes = [
   { id: 'planta', name: 'Planta Industrial', icon: Factory },
   { id: 'almacen', name: 'Almacén/Logística', icon: Warehouse },
   { id: 'office', name: 'Corporativo', icon: Building2 },
+];
+
+const industrialAssetTypes = [
+  'Motor de Inducción',
+  'Compresor de Aire',
+  'Chiller / Enfriador',
+  'Caldera / Vapor',
+  'Bomba Centrífuga',
+  'Transformador',
+  'Sistema HVAC',
+  'Iluminación Planta',
+  'Maquinaria CNC',
+  'Horno Industrial',
+  'Cinta Transportadora',
+  'Otro'
 ];
 
 const roomCategories = [
@@ -70,9 +87,39 @@ const IndustrialConfig = () => {
     monthlyBill: '',
     averageKwh: '',
     budgetTarget: '',
-    appliances: ['motors', 'chillers'],
-    applianceDetails: {},
+    energy_cost_per_kwh: 0.15,
+    currency_code: 'USD',
+    inventory: [
+      { name: 'Motor Línea 1', asset_type: 'Motor de Inducción', nominal_power_kw: 15.5, daily_usage_hours: 12, op_days_per_month: 22, load_factor: 0.75, power_factor: 0.85, location: 'Producción', efficiency_percentage: 88 }
+    ],
   });
+
+  const [saving, setSaving] = useState(false);
+
+  const addInventoryRow = () => {
+    setFormData(prev => ({
+      ...prev,
+      inventory: [
+        ...prev.inventory,
+        { name: '', asset_type: 'Motor de Inducción', nominal_power_kw: '', daily_usage_hours: '', op_days_per_month: 22, load_factor: 0.75, power_factor: 0.85, location: '', efficiency_percentage: 85 }
+      ]
+    }));
+  };
+
+  const removeInventoryRow = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      inventory: prev.inventory.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateInventoryRow = (index, field, value) => {
+    setFormData(prev => {
+      const newInventory = [...prev.inventory];
+      newInventory[index] = { ...newInventory[index], [field]: value };
+      return { ...prev, inventory: newInventory };
+    });
+  };
 
   const handleNext = () => {
     if (step < totalSteps) setStep(step + 1);
@@ -83,16 +130,40 @@ const IndustrialConfig = () => {
     if (step > 0) setStep(step - 1);
   };
 
-  const handleFinish = () => {
-    setUserProfile(prev => ({
-      ...prev,
-      type: 'industrial',
-      config: { ...formData, isIndustrial: true }
-    }));
-    if (formData.budgetTarget) {
-      updateGoals({ monthlyBudget: parseFloat(formData.budgetTarget) });
+  const handleFinish = async () => {
+    try {
+      setSaving(true);
+      // Validar y limpiar inventario
+      const validAssets = formData.inventory.filter(a => a.name && a.nominal_power_kw > 0);
+
+      if (validAssets.length > 0) {
+        await industrialApi.createAssetBatch(validAssets);
+      }
+
+      setUserProfile(prev => ({
+        ...prev,
+        type: 'industrial',
+        config: { ...formData, isIndustrial: true }
+      }));
+
+      if (formData.budgetTarget || formData.energy_cost_per_kwh) {
+        await settingsApi.updateSettings({
+          company_name: formData.houseType === 'planta' ? 'Planta Principal' : 'Instalación Industrial',
+          industry_sector: formData.houseType,
+          monthly_budget_limit: parseFloat(formData.budgetTarget) || 50000.0,
+          energy_cost_per_kwh: parseFloat(formData.energy_cost_per_kwh) || 0.15,
+          currency_code: formData.currency_code || 'USD'
+        });
+        updateGoals({ monthlyBudget: parseFloat(formData.budgetTarget) });
+      }
+
+      navigate('/industrial-dashboard');
+    } catch (error) {
+      console.error("Error saving records:", error);
+      alert("Error al guardar los equipos. Por favor reintenta.");
+    } finally {
+      setSaving(false);
     }
-    navigate('/industrial-dashboard');
   };
 
   const toggleAppliance = (id) => {
@@ -284,82 +355,174 @@ const IndustrialConfig = () => {
                   </div>
                 </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-bold text-slate-400 uppercase tracking-wide">Presupuesto Objetivo</label>
-                <div className="relative">
-                  <Target className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" size={20} />
-                  <input
-                    type="number"
-                    value={formData.budgetTarget}
-                    onChange={(e) => setFormData({ ...formData, budgetTarget: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-4 pl-12 pr-4 text-white font-bold text-xl outline-none"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wide">Costo Energy (per kWh)</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400" size={20} />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.energy_cost_per_kwh}
+                      onChange={(e) => setFormData({ ...formData, energy_cost_per_kwh: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl py-4 pl-12 pr-4 text-white font-bold text-xl outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wide">Moneda</label>
+                  <select
+                    value={formData.currency_code}
+                    onChange={(e) => setFormData({ ...formData, currency_code: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white font-bold outline-none h-[62px]"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="COP">COP ($)</option>
+                    <option value="MXN">MXN ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                  </select>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 3: Zones */}
+          {/* Step 3: Global Asset Inventory */}
           {step === 3 && (
-            <div className="animate-fadeIn h-full flex flex-col md:flex-row gap-8">
-              <div className="md:w-1/3 space-y-2">
-                <h2 className="text-xl font-bold text-white mb-2">Secciones</h2>
-                {roomCategories.map((zone) => {
-                  const isActive = activeZone === zone.id;
-                  return (
-                    <button
-                      key={zone.id}
-                      onClick={() => setActiveZone(zone.id)}
-                      className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all
-                                                ${isActive ? 'bg-blue-500/10 border-blue-500 text-white' : 'bg-slate-900/50 border-slate-800 text-slate-400'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <zone.icon size={20} className={isActive ? 'text-blue-400' : 'text-slate-500'} />
-                        <span className="font-bold text-sm">{zone.name}</span>
-                      </div>
-                    </button>
-                  );
-                })}
+            <div className="animate-fadeIn space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h2 className="text-2xl font-display font-bold text-white flex items-center gap-3">
+                    <Box className="text-blue-400" size={28} />
+                    Inventario de Activos
+                  </h2>
+                  <p className="text-slate-500 text-sm mt-1">Describe los equipos críticos de tu planta para un análisis detallado.</p>
+                </div>
+                <Button
+                  onClick={addInventoryRow}
+                  variant="ghost"
+                  className="bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
+                >
+                  + Agregar Equipo
+                </Button>
               </div>
 
-              <div className="md:w-2/3 bg-slate-950/50 rounded-2xl border border-slate-800 p-6 relative">
-                {roomCategories.find(z => z.id === activeZone)?.itemsData.map(item => {
-                  const isSelected = formData.appliances.includes(item.id);
-                  return (
-                    <div key={item.id} className={`p-4 rounded-xl border mb-3 transition-all ${isSelected ? 'bg-slate-900 border-blue-500/50' : 'bg-slate-900/20 border-slate-800'}`}>
-                      <div className="flex items-start gap-4">
-                        <button
-                          onClick={() => toggleAppliance(item.id)}
-                          className={`mt-1 size-6 rounded border flex items-center justify-center shrink-0 transition-all
-                                                        ${isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-600 hover:border-blue-500'}`}
-                        >
-                          {isSelected && <Check size={14} strokeWidth={4} />}
-                        </button>
-                        <div className="flex-1">
-                          <div className="font-bold text-sm text-white" onClick={() => toggleAppliance(item.id)}>{item.name}</div>
-                          <p className="text-[10px] text-slate-500">{item.desc}</p>
-                          {isSelected && item.expertCheck && (
-                            <div className="mt-3 pl-3 border-l-2 border-slate-700">
-                              <label className="flex items-center gap-3 text-xs text-slate-300">
-                                <input
-                                  type="checkbox"
-                                  className="accent-blue-500 size-4 rounded"
-                                  checked={formData.applianceDetails[item.id] || false}
-                                  onChange={(e) => setFormData(prev => ({
-                                    ...prev,
-                                    applianceDetails: { ...prev.applianceDetails, [item.id]: e.target.checked }
-                                  }))}
-                                />
-                                {item.expertCheck}
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/30">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-900/50 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-800">
+                      <th className="px-6 py-4">Nombre / Tag</th>
+                      <th className="px-4 py-4">Tipo</th>
+                      <th className="px-4 py-4">kW</th>
+                      <th className="px-4 py-4">Uso (h/d)</th>
+                      <th className="px-4 py-4">Días/Mes</th>
+                      <th className="px-4 py-4">Carga (%)</th>
+                      <th className="px-4 py-4">PF (cos φ)</th>
+                      <th className="px-4 py-4">Ubicación</th>
+                      <th className="px-4 py-4"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {formData.inventory.map((item, idx) => (
+                      <tr key={idx} className="group hover:bg-slate-900/40 transition-colors">
+                        <td className="px-6 py-3">
+                          <input
+                            type="text"
+                            placeholder="Ej: Extrusora Principal"
+                            value={item.name}
+                            onChange={(e) => updateInventoryRow(idx, 'name', e.target.value)}
+                            className="w-full bg-transparent border-none text-white focus:ring-0 placeholder:text-slate-700 font-medium"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={item.asset_type}
+                            onChange={(e) => updateInventoryRow(idx, 'asset_type', e.target.value)}
+                            className="bg-transparent border-none text-blue-400 text-sm focus:ring-0 appearance-none cursor-pointer font-bold"
+                          >
+                            {industrialAssetTypes.map(type => (
+                              <option key={type} value={type} className="bg-slate-900 text-white">{type}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            placeholder="0.0"
+                            value={item.nominal_power_kw}
+                            onChange={(e) => updateInventoryRow(idx, 'nominal_power_kw', parseFloat(e.target.value))}
+                            className="w-20 bg-transparent border-none text-white focus:ring-0 placeholder:text-slate-700"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            placeholder="24"
+                            max="24"
+                            value={item.daily_usage_hours}
+                            onChange={(e) => updateInventoryRow(idx, 'daily_usage_hours', parseFloat(e.target.value))}
+                            className="w-16 bg-transparent border-none text-white focus:ring-0 placeholder:text-slate-700"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            placeholder="22"
+                            value={item.op_days_per_month}
+                            onChange={(e) => updateInventoryRow(idx, 'op_days_per_month', parseInt(e.target.value))}
+                            className="w-12 bg-transparent border-none text-white focus:ring-0 placeholder:text-slate-700"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.75"
+                            value={item.load_factor}
+                            onChange={(e) => updateInventoryRow(idx, 'load_factor', parseFloat(e.target.value))}
+                            className="w-16 bg-transparent border-none text-emerald-400 focus:ring-0 placeholder:text-slate-700 font-bold"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.85"
+                            value={item.power_factor}
+                            onChange={(e) => updateInventoryRow(idx, 'power_factor', parseFloat(e.target.value))}
+                            className="w-16 bg-transparent border-none text-blue-400 focus:ring-0 placeholder:text-slate-700 font-bold"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            placeholder="Zona A"
+                            value={item.location}
+                            onChange={(e) => updateInventoryRow(idx, 'location', e.target.value)}
+                            className="w-full bg-transparent border-none text-slate-400 focus:ring-0 placeholder:text-slate-700 text-xs"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => removeInventoryRow(idx)}
+                            className="p-2 text-slate-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <X size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+
+              {formData.inventory.length === 0 && (
+                <div className="py-12 text-center bg-slate-900/20 border border-dashed border-slate-800 rounded-2xl">
+                  <p className="text-slate-500 font-medium">No has agregado equipos todavía.</p>
+                  <button onClick={addInventoryRow} className="mt-2 text-blue-500 font-bold hover:underline">
+                    + Agregar el primer equipo
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -372,10 +535,20 @@ const IndustrialConfig = () => {
             )}
             <button
               onClick={handleNext}
-              className="flex items-center gap-3 bg-blue-600 hover:bg-blue-400 text-white px-8 py-4 rounded-xl font-black text-lg shadow-lg shadow-blue-500/20 ml-auto"
+              disabled={saving}
+              className={`flex items-center gap-3 bg-blue-600 hover:bg-blue-400 text-white px-8 py-4 rounded-xl font-black text-lg shadow-lg shadow-blue-500/20 ml-auto transition-all ${saving ? 'opacity-50 cursor-wait' : ''}`}
             >
-              {step === totalSteps ? 'Finalizar' : 'Siguiente Paso'}
-              <ChevronRight size={20} />
+              {saving ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  {step === totalSteps ? 'Finalizar Configuración' : 'Siguiente Paso'}
+                  <ChevronRight size={20} />
+                </>
+              )}
             </button>
           </div>
 
