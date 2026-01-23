@@ -9,7 +9,8 @@ import {
   Leaf,
   Settings,
   LogOut,
-  Zap
+  Zap,
+  MessageSquareText
 } from 'lucide-react';
 import ConfirmationModal from './ui/ConfirmationModal';
 
@@ -21,6 +22,7 @@ const ResidentialSidebar = () => {
     { to: "/dashboard", icon: LayoutDashboard, label: "Panel de Control" },
     { to: "/financial-impact", icon: Receipt, label: "Facturación" },
     { to: "/appliances", icon: Refrigerator, label: "Electrodomésticos" },
+    { to: "/residential-assistant", icon: MessageSquareText, label: "Asistente Ecco" },
     { to: "/missions", icon: Trophy, label: "Misiones" },
     { to: "/energy-analysis", icon: LineChart, label: "Análisis" },
     { to: "/carbon-footprint", icon: Leaf, label: "Huella de Carbono" },

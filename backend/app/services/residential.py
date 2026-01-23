@@ -32,9 +32,9 @@ class ResidentialService:
         profile_res = await db.execute(select(ResidentialProfile).where(ResidentialProfile.user_id == user_id))
         assets_res = await db.execute(select(ResidentialAsset).where(ResidentialAsset.user_id == user_id))
         readings_res = await db.execute(
-            select(ReadingModel)
-            .where(ReadingModel.user_id == user_id)
-            .order_by(ReadingModel.date.desc())
+            select(ConsumptionReading)
+            .where(ConsumptionReading.user_id == user_id)
+            .order_by(ConsumptionReading.date.desc())
             .limit(10)
         )
         

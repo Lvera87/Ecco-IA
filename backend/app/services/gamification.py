@@ -54,17 +54,24 @@ class GamificationService:
 
     async def get_user_missions(self, db: AsyncSession, user_id: int):
         """Obtiene las misiones activas y completadas del usuario."""
-        query = select(UserMission).where(UserMission.user_id == user_id).order_by(UserMission.created_at.desc())
+        from sqlalchemy.orm import selectinload
+        query = (
+            select(UserMission)
+            .where(UserMission.user_id == user_id)
+            .options(selectinload(UserMission.mission))
+            .order_by(UserMission.created_at.desc())
+        )
         result = await db.execute(query)
         return result.scalars().all()
 
     async def complete_mission(self, db: AsyncSession, user_id: int, mission_id: int):
         """Marca una misión como completada y otorga las recompensas."""
+        from sqlalchemy.orm import selectinload
         query = select(UserMission).where(
             UserMission.user_id == user_id, 
             UserMission.mission_id == mission_id,
             UserMission.status == "pending"
-        )
+        ).options(selectinload(UserMission.mission))
         result = await db.execute(query)
         user_mission = result.scalar_one_or_none()
         
