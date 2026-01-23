@@ -21,6 +21,7 @@ const Layout = ({ children }) => {
     '/missions',
     '/energy-analysis',
     '/carbon-footprint',
+    '/residential-assistant',
     '/profile',
   ];
 
