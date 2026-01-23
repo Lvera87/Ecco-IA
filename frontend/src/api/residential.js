@@ -59,5 +59,10 @@ export const residentialApi = {
     getDashboardInsights: async () => {
         const response = await client.get('/residential/dashboard-insights');
         return response.data;
+    },
+
+    askAssistant: async (message) => {
+        const response = await client.post(`/residential/assistant/chat?message=${encodeURIComponent(message)}`);
+        return response.data;
     }
 };

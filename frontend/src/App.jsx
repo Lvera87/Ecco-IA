@@ -21,6 +21,7 @@ import DesignSystem from './pages/DesignSystem.jsx';
 import UserProfile from './pages/UserProfile.jsx';
 import Layout from './components/Layout.jsx';
 import IndustrialOnboarding from './pages/IndustrialOnboarding.jsx';
+import ResidentialAssistant from './pages/ResidentialAssistant.jsx';
 
 function App() {
   return (

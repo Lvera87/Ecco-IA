@@ -145,6 +145,40 @@ async def add_consumption_reading(
     await db.refresh(reading)
     return reading
 
+# --- ASSISTANT ---
+
+@router.post("/assistant/chat")
+async def chat_with_assistant(
+    message: str,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_async_session)
+):
+    """Conversación directa con el experto del hogar (Gemini)"""
+    from app.services.gemini_service import gemini_service
+    
+    # Obtener contexto del hogar
+    result_profile = await db.execute(select(ProfileModel).where(ProfileModel.user_id == current_user.id))
+    profile = result_profile.scalar_one_or_none()
+    
+    result_assets = await db.execute(select(AssetModel).where(AssetModel.user_id == current_user.id))
+    assets = result_assets.scalars().all()
+    
+    home_context = {
+        "stratum": profile.stratum if profile else 3,
+        "housing": profile.house_type if profile else "apartamento",
+        "appliances": [f"{a.name} ({a.icon})" for a in assets]
+    }
+    
+    prompt = (
+        f"Eres un experto en eficiencia energética residencial. Ayuda al usuario a ahorrar dinero y energía.\n"
+        f"Contexto del hogar del usuario: {home_context}.\n"
+        f"Pregunta del usuario: {message}\n"
+        f"Responde de forma amable, práctica y enfocada en el contexto colombiano (Estratos, COP)."
+    )
+    
+    response = await gemini_service.model.generate_content_async(prompt)
+    return {"response": response.text}
+
 # --- DASHBOARD INSIGHTS ---
 
 @router.get("/dashboard-insights")
