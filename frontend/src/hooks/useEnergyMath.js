@@ -28,36 +28,33 @@ export const useEnergyMath = () => {
 
     // Core Calculations
     const calculations = useMemo(() => {
-        // Base consumption from config if industrial, or 0 if residential
-        const baseMonthlyKwh = isIndustrial ? (parseFloat(config.consumption) || 0) : 0;
+        // Base consumption from DB profile
+        const baseMonthlyKwh = isIndustrial ? (parseFloat(config.monthly_consumption_avg) || 0) : 150;
 
-        // Current consumption from history
+        // Current consumption from history (Last reading vs penult reading could be better, but for now latest)
+        // Note: consumptionHistory is already sorted desc by date in AppContext
         const latestReading = consumptionHistory.length > 0
-            ? consumptionHistory[consumptionHistory.length - 1].value
+            ? consumptionHistory[0].value
             : (isIndustrial ? baseMonthlyKwh / 30 : 0);
 
         const projectedKwh = latestReading > 0 ? latestReading * 30 : baseMonthlyKwh;
         const projectedBill = projectedKwh * kwhPrice;
 
         // Vampire & Inefficiency costs
+        // We now base this on the logic derived from ResidentialService if possible, 
+        // but here we keep a frontend projection for immediate feedback.
         let vampireKwhMonthly = 0;
         if (!isIndustrial) {
-            if (details.fridge_check) vampireKwhMonthly += 15;
-            if (details.tv_check) vampireKwhMonthly += 5;
-            if (config.appliances?.includes('bulbs_old')) vampireKwhMonthly += 10;
+            // Check for aging assets or standby icons in appliances list
+            const hasInefficientFridge = appliances.some(a => a.icon === 'Refrigerator' && a.isHighImpact);
+            const standbyDevicesCount = appliances.filter(a => ['Tv', 'Monitor', 'Consolas'].includes(a.icon)).length;
+
+            if (hasInefficientFridge) vampireKwhMonthly += 15;
+            vampireKwhMonthly += standbyDevicesCount * 5;
         } else {
-            // Industrial "Waste" calculation based on Audit Questions
-            // If No VFD (motors detail is false or undefined) -> 15% waste on motor load
-            if (!details.motors) vampireKwhMonthly += (projectedKwh * 0.4) * 0.15;
-
-            // If No Power Quality (harmonic filters/caps) -> 5% waste in reactive penalties/heating
-            if (!details.power_quality) vampireKwhMonthly += projectedKwh * 0.05;
-
-            // If No SCADA/BMS -> 8% operational waste (lights on, machines idle)
-            if (!details.scada_bms) vampireKwhMonthly += projectedKwh * 0.08;
-
-            // Base leakage (air/steam leaks always present if not monitored)
-            vampireKwhMonthly += projectedKwh * 0.03;
+            // Industrial "Waste" calculation (using props from IndustrialSettings if needed)
+            // For now simplified as in backend
+            vampireKwhMonthly = projectedKwh * 0.15;
         }
 
         const vampireMoneyLost = vampireKwhMonthly * kwhPrice;
@@ -67,9 +64,11 @@ export const useEnergyMath = () => {
         const treesEquivalent = Math.round(co2Footprint / 20);
 
         // Industrial Specifics
-        const floorArea = parseFloat(config.area) || 1;
+        const floorArea = parseFloat(config.area_sqm) || 1;
         const energyIntensity = projectedKwh / floorArea;
-        const efficiencyScore = isIndustrial ? Math.max(0, Math.min(100, 100 - ((energyIntensity / 20) * 20))).toFixed(1) : null;
+        const efficiencyScore = isIndustrial
+            ? Math.max(0, Math.min(100, 100 - ((energyIntensity / 50) * 20))).toFixed(1)
+            : null;
 
         // Load Estimates (Percent of total) based on Industrial Zones
         const loadDist = [];

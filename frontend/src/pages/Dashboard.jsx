@@ -88,10 +88,12 @@ const Dashboard = () => {
           id: a.id,
           name: a.name,
           icon: a.icon,
-          consumption: a.monthly_cost_estimate / 30 / 850,
+          // Consumo diario real en kWh
+          consumption: (a.power_watts * a.daily_hours) / 1000,
           status: a.status,
           category: a.category,
-          isHighImpact: a.is_high_impact
+          isHighImpact: a.is_high_impact,
+          monthlyCost: a.monthly_cost_estimate
         })));
       }
 
@@ -105,24 +107,11 @@ const Dashboard = () => {
       }
 
       if (gamification && gamification.active_missions) {
-        // Transformar misiones del backend al formato del frontend
-        const enhancedMissions = gamification.active_missions.map(m => ({
-          id: m.mission_id,
-          backend_id: m.id,
-          title: m.mission.title,
-          description: m.mission.description,
-          xp: m.mission.xp_reward,
-          progress: m.progress * 10, // Escalar si es necesario
-          maxProgress: 10,
-          status: m.status === 'pending' ? 'active' : m.status,
-          icon: m.mission.icon
-        }));
-        // Actualizar el context si es necesario (asumiendo que useApp tiene setMissions)
-        // Por ahora lo manejamos localmente o vía prop si useApp lo expone
+        // Las misiones ahora vienen del backend
+        setGamificationStats(gamification);
       }
 
       setResidentialInsights(insights);
-      setGamificationStats(gamification);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -133,6 +122,7 @@ const Dashboard = () => {
   const handleCompleteMission = async (missionId) => {
     try {
       await gamificationApi.completeMission(missionId);
+      // Recarga silenciosa para actualizar XP y misiones
       fetchDashboardData(true);
     } catch (error) {
       console.error("Mission Error:", error);
@@ -145,9 +135,19 @@ const Dashboard = () => {
     hasData, hasProfile, formatMoney, enrichedAppliances
   } = useEnergyMath();
 
-  const handleSaveConsumption = (data) => {
-    addConsumptionReading(data);
-    setIsConsumptionModalOpen(false);
+  const handleSaveConsumption = async (data) => {
+    try {
+      // Persistir en backend
+      await residentialApi.addReading({
+        reading_value: parseFloat(data.value),
+        reading_type: 'manual'
+      });
+      setIsConsumptionModalOpen(false);
+      // Refrescar todo el dashboard con los nuevos cálculos del backend
+      fetchDashboardData(true);
+    } catch (error) {
+      console.error("Error saving reading:", error);
+    }
   };
 
   // Occupancy-based efficiency status
@@ -161,16 +161,12 @@ const Dashboard = () => {
   const dailyProgress = latestReading > 0 ? Math.min(Math.round((latestReading / dailyGoal) * 100), 100) : 0;
 
   const activeAppliances = enrichedAppliances.filter(a => a.status).slice(0, 4);
-  const suggestedMission = missions?.find(m => m.status === 'claimable') || missions?.find(m => m.status === 'active');
-  const MissionIcon = suggestedMission ? (iconMap?.[suggestedMission.icon] || Zap) : Zap;
 
-  // Chart data
-  const energyData = hasData ? [
-    { time: '00:00', value: 0.45 }, { time: '04:00', value: 0.35 },
-    { time: '08:00', value: 0.88 }, { time: '12:00', value: 0.72 },
-    { time: '16:00', value: 0.85 }, { time: '20:00', value: 0.82 },
-    { time: '22:00', value: 0.65 },
-  ] : [];
+  // Chart data usando el historial real
+  const energyData = hasData ? consumptionHistory.map(r => ({
+    time: new Date(r.date).toLocaleDateString([], { day: '2-digit', month: 'short' }),
+    value: r.value
+  })).reverse() : [];
 
   if (loading) {
     return (
