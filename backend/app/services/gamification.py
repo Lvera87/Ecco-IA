@@ -18,13 +18,23 @@ class GamificationService:
         return int((total_xp / 100) ** 0.5) + 1
 
     async def get_or_create_profile(self, db: AsyncSession, user_id: int) -> GamificationProfile:
-        """Asegura que el usuario tenga un perfil de gamificación."""
+        """Asegura que el usuario tenga un perfil de gamificación y misiones iniciales."""
+        # 0. Asegurar que las misiones maestras existan
+        await self.seed_initial_missions(db)
+
         result = await db.execute(select(GamificationProfile).where(GamificationProfile.user_id == user_id))
         profile = result.scalar_one_or_none()
         
         if not profile:
             profile = GamificationProfile(user_id=user_id, total_xp=0, current_level=1, eco_points=0)
             db.add(profile)
+            await db.flush() # Para tener el perfil disponible para misiones
+
+            # Asignar misiones iniciales basadas en el tipo de usuario (por ahora global/residential)
+            master_missions = await db.execute(select(Mission).where(Mission.category.in_(["global", "residential"])))
+            for m in master_missions.scalars().all():
+                db.add(UserMission(user_id=user_id, mission_id=m.id, status="pending", progress=0.0))
+            
             await db.commit()
             await db.refresh(profile)
         return profile

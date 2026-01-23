@@ -9,7 +9,9 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Usar argon2 en lugar de bcrypt para compatibilidad con Python 3.13
+# Argon2 es el ganador de Password Hashing Competition - más seguro y moderno
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 # --- Constants ---
 ALGORITHM = "HS256"

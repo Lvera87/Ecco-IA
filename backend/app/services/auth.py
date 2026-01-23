@@ -4,9 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User as UserModel
 from app.core.security import verify_password, create_access_token, create_refresh_token
 
-async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[UserModel]:
-    """Valida credenciales y devuelve el usuario si es correcto."""
-    result = await db.execute(select(UserModel).where(UserModel.username == username))
+async def authenticate_user(db: AsyncSession, username_or_email: str, password: str) -> Optional[UserModel]:
+    """Valida credenciales (username o email) y devuelve el usuario si es correcto."""
+    result = await db.execute(
+        select(UserModel).where(
+            (UserModel.username == username_or_email) | (UserModel.email == username_or_email)
+        )
+    )
     user = result.scalar_one_or_none()
     if not user:
         return None
