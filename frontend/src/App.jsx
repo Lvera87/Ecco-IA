@@ -45,6 +45,7 @@ function App() {
             <Route path="/industrial-config" element={<IndustrialConfig />} />
             <Route path="/global-consumption" element={<GlobalConsumption />} />
             <Route path="/data-assistant" element={<DataAssistant />} />
+            <Route path="/residential-assistant" element={<ResidentialAssistant />} />
             <Route path="/results-dashboard" element={<ResultsDashboard />} />
             <Route path="/design-system" element={<DesignSystem />} />
             <Route path="/industrial-onboarding" element={<IndustrialOnboarding />} />
