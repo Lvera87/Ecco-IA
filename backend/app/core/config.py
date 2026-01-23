@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     api_v1_prefix: str = "/api/v1"
     # Origins allowed to interact with the API (React dev server by default)
-    backend_cors_origins: List[str] = ["http://localhost:5173"]
+    backend_cors_origins: List[str] | str = ["http://localhost:5173"]
 
     database_url: str = "sqlite+aiosqlite:///./sql_app.db"
     # JWT / Auth settings
