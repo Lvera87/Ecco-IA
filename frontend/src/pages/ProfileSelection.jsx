@@ -7,11 +7,8 @@ const ProfileSelection = () => {
   const navigate = useNavigate();
 
   const handleSelect = (type) => {
-    if (type === 'residential') {
-      navigate('/residential-config');
-    } else {
-      navigate('/industrial-config');
-    }
+    // Redirigir al registro con el tipo de usuario
+    navigate(`/register?type=${type}`);
   };
 
   return (

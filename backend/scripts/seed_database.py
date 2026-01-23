@@ -16,9 +16,12 @@ from app.core.security import get_password_hash
 async def reset_and_seed():
     print("🔄 Reseteando base de datos...")
     
-    # Drop all tables and recreate
+    # Drop all tables with CASCADE to handle dependencies
     async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # Use raw SQL to drop all with CASCADE for PostgreSQL
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
         await conn.run_sync(Base.metadata.create_all)
     
     print("✅ Tablas recreadas")
@@ -65,10 +68,9 @@ async def reset_and_seed():
                 user_id=home_user.id,
                 stratum=4,
                 city="Bogotá",
-                home_type="apartment",
+                house_type="apartment",
                 occupants=4,
-                has_electric_stove=True,
-                has_electric_heater=False,
+                energy_source="electric",
                 target_monthly_bill=180000
             )
             db.add(home_profile)
@@ -80,28 +82,28 @@ async def reset_and_seed():
             
             home_appliances = [
                 ResidentialAsset(user_id=home_user.id, name="Nevera Samsung", category="kitchen", 
-                                 power_watts=150, estimated_hours_day=24, standby_watts=5, 
+                                 power_watts=150, daily_hours=24, 
                                  is_high_impact=True, status=True, icon="Refrigerator"),
                 ResidentialAsset(user_id=home_user.id, name="Lavadora LG", category="laundry",
-                                 power_watts=500, estimated_hours_day=1.5, standby_watts=3,
+                                 power_watts=500, daily_hours=1.5,
                                  is_high_impact=True, status=True, icon="WashingMachine"),
                 ResidentialAsset(user_id=home_user.id, name="TV 55\" OLED", category="entertainment",
-                                 power_watts=120, estimated_hours_day=5, standby_watts=15,
+                                 power_watts=120, daily_hours=5,
                                  is_high_impact=False, status=True, icon="Tv"),
                 ResidentialAsset(user_id=home_user.id, name="Consola PlayStation 5", category="entertainment",
-                                 power_watts=200, estimated_hours_day=2, standby_watts=25,
+                                 power_watts=200, daily_hours=2,
                                  is_high_impact=False, status=True, icon="Gamepad2"),
                 ResidentialAsset(user_id=home_user.id, name="Aire Acondicionado", category="climate",
-                                 power_watts=1500, estimated_hours_day=6, standby_watts=10,
+                                 power_watts=1500, daily_hours=6,
                                  is_high_impact=True, status=True, icon="Wind"),
                 ResidentialAsset(user_id=home_user.id, name="Microondas", category="kitchen",
-                                 power_watts=1000, estimated_hours_day=0.3, standby_watts=3,
+                                 power_watts=1000, daily_hours=0.3,
                                  is_high_impact=False, status=True, icon="Microwave"),
                 ResidentialAsset(user_id=home_user.id, name="Router WiFi", category="office",
-                                 power_watts=12, estimated_hours_day=24, standby_watts=12,
+                                 power_watts=12, daily_hours=24,
                                  is_high_impact=False, status=True, icon="Wifi"),
                 ResidentialAsset(user_id=home_user.id, name="PC Gamer", category="office",
-                                 power_watts=450, estimated_hours_day=4, standby_watts=8,
+                                 power_watts=450, daily_hours=4,
                                  is_high_impact=True, status=True, icon="Monitor"),
             ]
             db.add_all(home_appliances)

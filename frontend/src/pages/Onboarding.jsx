@@ -82,7 +82,7 @@ const Onboarding = () => {
                 <ArrowRight className="transition-transform group-hover:translate-x-1" />
               </button>
               <button
-                onClick={() => navigate('/industrial-config')}
+                onClick={() => navigate('/register?type=industrial')}
                 className="bg-transparent border-2 border-white/40 hover:border-white text-white px-10 py-5 rounded-xl font-bold text-lg transition-all text-center flex items-center gap-2"
               >
                 <Factory size={20} />
