@@ -22,6 +22,9 @@ def get_async_engine():
         )
     return _engine
 
+# Export for scripts
+async_engine = get_async_engine()
+
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Yield a database session in async context."""

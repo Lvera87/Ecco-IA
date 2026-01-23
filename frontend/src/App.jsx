@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import IndustrialDashboard from './pages/IndustrialDashboard.jsx';
 import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
 import IndustrialSettings from './pages/IndustrialSettings.jsx';
 import Appliances from './pages/Appliances.jsx';
 import DataAssistant from './pages/DataAssistant.jsx';
@@ -29,6 +30,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Onboarding />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/profile-selection" element={<ProfileSelection />} />
             <Route path="/residential-config" element={<ResidentialConfig />} />
             <Route path="/dashboard" element={<Dashboard />} />

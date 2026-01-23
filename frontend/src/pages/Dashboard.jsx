@@ -104,6 +104,23 @@ const Dashboard = () => {
         })));
       }
 
+      if (gamification && gamification.active_missions) {
+        // Transformar misiones del backend al formato del frontend
+        const enhancedMissions = gamification.active_missions.map(m => ({
+          id: m.mission_id,
+          backend_id: m.id,
+          title: m.mission.title,
+          description: m.mission.description,
+          xp: m.mission.xp_reward,
+          progress: m.progress * 10, // Escalar si es necesario
+          maxProgress: 10,
+          status: m.status === 'pending' ? 'active' : m.status,
+          icon: m.mission.icon
+        }));
+        // Actualizar el context si es necesario (asumiendo que useApp tiene setMissions)
+        // Por ahora lo manejamos localmente o vía prop si useApp lo expone
+      }
+
       setResidentialInsights(insights);
       setGamificationStats(gamification);
     } catch (error) {
