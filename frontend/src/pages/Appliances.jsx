@@ -13,8 +13,7 @@ import InsightCard from '../components/ui/InsightCard';
 import EmptyState from '../components/ui/EmptyState';
 import AddApplianceModal from '../components/ui/AddApplianceModal';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import AddApplianceModal from '../components/ui/AddApplianceModal';
-import ConfirmationModal from '../components/ui/ConfirmationModal';
+
 import { useEnergy, iconMap } from '../context/EnergyContext';
 import { useUI } from '../context/UIContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
