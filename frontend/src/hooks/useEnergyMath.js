@@ -28,32 +28,28 @@ export const useEnergyMath = () => {
 
     // Core Calculations
     const calculations = useMemo(() => {
-        // Base consumption from DB profile
-        const baseMonthlyKwh = isIndustrial ? (parseFloat(config.monthly_consumption_avg) || 0) : 150;
+        // Prioridad de consumo base: 1. Capturado (Factura) 2. Promedio declarado 3. Default
+        const baseMonthlyKwh = isIndustrial
+            ? (parseFloat(config.monthly_consumption_avg) || 0)
+            : (parseFloat(config.average_kwh_captured) || (config.monthly_bill_avg / kwhPrice) || 150);
 
-        // Current consumption from history (Last reading vs penult reading could be better, but for now latest)
-        // Note: consumptionHistory is already sorted desc by date in AppContext
+        // Current consumption from history
         const latestReading = consumptionHistory.length > 0
             ? consumptionHistory[0].value
-            : (isIndustrial ? baseMonthlyKwh / 30 : 0);
+            : 0;
 
         const projectedKwh = latestReading > 0 ? latestReading * 30 : baseMonthlyKwh;
         const projectedBill = projectedKwh * kwhPrice;
 
         // Vampire & Inefficiency costs
-        // We now base this on the logic derived from ResidentialService if possible, 
-        // but here we keep a frontend projection for immediate feedback.
         let vampireKwhMonthly = 0;
         if (!isIndustrial) {
-            // Check for aging assets or standby icons in appliances list
-            const hasInefficientFridge = appliances.some(a => a.icon === 'Refrigerator' && a.isHighImpact);
-            const standbyDevicesCount = appliances.filter(a => ['Tv', 'Monitor', 'Consolas'].includes(a.icon)).length;
+            const hasInefficientFridge = appliances.some(a => (a.icon === 'Refrigerator' || a.icon === 'fridge') && a.isHighImpact);
+            const standbyDevicesCount = appliances.filter(a => ['Tv', 'Monitor', 'Consolas', 'tv', 'monitor', 'console'].includes(a.icon)).length;
 
-            if (hasInefficientFridge) vampireKwhMonthly += 15;
-            vampireKwhMonthly += standbyDevicesCount * 5;
+            if (hasInefficientFridge) vampireKwhMonthly += 8; // Basado en backend actualizado
+            vampireKwhMonthly += standbyDevicesCount * 2.5;
         } else {
-            // Industrial "Waste" calculation (using props from IndustrialSettings if needed)
-            // For now simplified as in backend
             vampireKwhMonthly = projectedKwh * 0.15;
         }
 
