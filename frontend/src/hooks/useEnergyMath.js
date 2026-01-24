@@ -41,14 +41,17 @@ export const useEnergyMath = () => {
         const projectedKwh = latestReading > 0 ? latestReading * 30 : baseMonthlyKwh;
         const projectedBill = projectedKwh * kwhPrice;
 
-        // Vampire & Inefficiency costs
+        // Vampire & Inefficiency costs (Fisica de Sentido Común)
         let vampireKwhMonthly = 0;
         if (!isIndustrial) {
-            const hasInefficientFridge = appliances.some(a => (a.icon === 'Refrigerator' || a.icon === 'fridge') && a.isHighImpact);
-            const standbyDevicesCount = appliances.filter(a => ['Tv', 'Monitor', 'Consolas', 'tv', 'monitor', 'console'].includes(a.icon)).length;
-
-            if (hasInefficientFridge) vampireKwhMonthly += 8; // Basado en backend actualizado
-            vampireKwhMonthly += standbyDevicesCount * 2.5;
+            // Equipos modernos < 1W = 0.7 kWh/mes. Equipos viejos/highImpact = 2.5 kWh/mes
+            appliances.forEach(a => {
+                if (['Tv', 'Monitor', 'Consolas', 'tv', 'monitor', 'console'].includes(a.icon)) {
+                    vampireKwhMonthly += a.isHighImpact ? 2.5 : 0.7;
+                } else if (a.isHighImpact && (a.icon === 'Refrigerator' || a.icon === 'fridge')) {
+                    vampireKwhMonthly += 8.0;
+                }
+            });
         } else {
             vampireKwhMonthly = projectedKwh * 0.15;
         }
@@ -59,12 +62,15 @@ export const useEnergyMath = () => {
         const co2Footprint = projectedKwh * CO2_FACTOR;
         const treesEquivalent = Math.round(co2Footprint / 20);
 
-        // Industrial Specifics
+        // Specific Metrics
         const floorArea = parseFloat(config.area_sqm) || 1;
         const energyIntensity = projectedKwh / floorArea;
+        const occupants = parseInt(config.occupants) || 1;
+        const kwhPerPerson = projectedKwh / occupants;
+
         const efficiencyScore = isIndustrial
             ? Math.max(0, Math.min(100, 100 - ((energyIntensity / 50) * 20))).toFixed(1)
-            : null;
+            : Math.max(0, Math.min(100, 100 - (Math.max(0, kwhPerPerson - 35) * 1.5))).toFixed(0);
 
         // Load Estimates (Percent of total) based on Industrial Zones
         const loadDist = [];
