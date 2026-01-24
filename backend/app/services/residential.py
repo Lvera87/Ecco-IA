@@ -12,6 +12,15 @@ class ResidentialService:
     Orquesta la lógica entre la base de datos, los calculadores core y la IA.
     """
 
+    def get_kwh_price(self, stratum: int) -> float:
+        """Wrapper para obtener el precio del kWh desde el calculador central."""
+        return energy_calculators.get_kwh_price(stratum)
+
+    def calculate_appliance_cost(self, watts: float, hours: float, kwh_price: float) -> float:
+        """Wrapper para calcular costo mensual."""
+        monthly_kwh = energy_calculators.calculate_monthly_kwh(watts, hours)
+        return monthly_kwh * kwh_price
+
     async def get_dashboard_insights(self, db: AsyncSession, user_id: int) -> Dict[str, Any]:
         """
         Genera una visión 360 del hogar: Financiero + Técnico + IA.
