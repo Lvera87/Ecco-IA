@@ -7,7 +7,7 @@ import {
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
 import Modal from '../components/ui/Modal';
-import { useApp } from '../context/AppContext';
+import { useUI } from '../context/UIContext';
 
 // Industrial Specialized Components
 import IndustrialMetricCard from '../components/industrial/IndustrialMetricCard';
@@ -60,7 +60,7 @@ const IndustrialDashboard = () => {
   });
 
   const [newAsset, setNewAsset] = useState(INITIAL_ASSET_STATE);
-  const { addNotification } = useApp();
+  const { addNotification } = useUI();
 
   // --- Derived State (Performance Optimized) ---
   const hasAssets = useMemo(() => data.assets.length > 0, [data.assets]);

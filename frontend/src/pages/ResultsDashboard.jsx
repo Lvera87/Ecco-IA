@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { useApp } from '../context/AppContext';
+import { useUser } from '../context/UserContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
 import StatCardShared from '../components/ui/StatCard';
 
@@ -27,7 +27,7 @@ const QuickTipCard = ({ icon: Icon, title, description }) => (
 
 const ResultsDashboard = () => {
   const navigate = useNavigate();
-  const { userProfile } = useApp();
+  const { userProfile } = useUser();
   const {
     efficiencyScore, projectedBill, co2Footprint,
     formatMoney, isIndustrial

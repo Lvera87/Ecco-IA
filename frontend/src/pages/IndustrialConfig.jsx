@@ -6,7 +6,7 @@ import {
   Upload, FileText, Scan, Loader2, X,
   Briefcase, Lightbulb, Box
 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useUser } from '../context/UserContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { industrialApi } from '../api/industrial';
@@ -71,7 +71,7 @@ const roomCategories = [
 
 const IndustrialConfig = () => {
   const navigate = useNavigate();
-  const { setUserProfile, updateGoals } = useApp();
+  const { setUserProfile } = useUser();
 
   // UI STATES (IDENTICOS A RESIDENCIAL)
   const [step, setStep] = useState(0);
@@ -154,7 +154,7 @@ const IndustrialConfig = () => {
           energy_cost_per_kwh: parseFloat(formData.energy_cost_per_kwh) || 0.15,
           currency_code: formData.currency_code || 'USD'
         });
-        updateGoals({ monthlyBudget: parseFloat(formData.budgetTarget) });
+        // Update local context for immediate feedback if needed, mainly relying on API + Navigation
       }
 
       navigate('/industrial-dashboard');

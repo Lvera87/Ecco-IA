@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { AppProviders } from './context/AppProviders';
 import IndustrialDashboard from './pages/IndustrialDashboard.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
@@ -25,7 +25,7 @@ import ResidentialAssistant from './pages/ResidentialAssistant.jsx';
 
 function App() {
   return (
-    <AppProvider>
+    <AppProviders>
       <Router>
         <Layout>
           <Routes>
@@ -54,7 +54,7 @@ function App() {
           </Routes>
         </Layout>
       </Router>
-    </AppProvider>
+    </AppProviders>
   );
 }
 

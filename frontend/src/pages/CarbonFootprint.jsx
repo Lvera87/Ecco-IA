@@ -8,7 +8,8 @@ import Card from '../components/ui/Card';
 import StatCard from '../components/ui/StatCard';
 import InsightCard from '../components/ui/InsightCard';
 import EmptyState from '../components/ui/EmptyState';
-import { useApp } from '../context/AppContext';
+import { useUser } from '../context/UserContext';
+import { useEnergy } from '../context/EnergyContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
 
 // Custom Tooltip for Charts
@@ -41,7 +42,8 @@ const CarbonFootprint = () => {
     }
   }, [isMounted]);
 
-  const { userProfile, consumptionHistory } = useApp();
+  const { userProfile } = useUser();
+  const { consumptionHistory } = useEnergy();
   const {
     co2Footprint = 0, hasData, enrichedAppliances = [],
     CO2_FACTOR = 0.164
