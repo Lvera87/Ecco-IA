@@ -7,7 +7,7 @@ import {
     Utensils, Shirt, BedDouble, Monitor, Lightbulb, // Added Lightbulb
     Briefcase, Sun, Moon // Added Lifestyle Icons
 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useUser } from '../context/UserContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { residentialApi } from '../api/residential';
@@ -133,7 +133,7 @@ function FlameIcon(props) {
 
 const ResidentialConfig = () => {
     const navigate = useNavigate();
-    const { setUserProfile, updateGoals } = useApp();
+    const { setUserProfile, userProfile } = useUser();
     const [step, setStep] = useState(0); // Start at Step 0 for Upload
     const totalSteps = 3;
 
@@ -219,19 +219,15 @@ const ResidentialConfig = () => {
             }
 
             // Update Global Context (keeping local state for immediate UI feedback)
-            setUserProfile(prev => ({
-                ...prev,
+            setUserProfile({
                 type: 'residential',
                 config: {
                     ...formData,
                     difficulty,
-                    scannedData
+                    scannedData,
+                    target_monthly_bill: parseFloat(formData.budgetTarget) || 0
                 }
-            }));
-
-            if (formData.budgetTarget) {
-                updateGoals({ monthlyBudget: parseFloat(formData.budgetTarget) });
-            }
+            });
 
             navigate('/dashboard');
         } catch (error) {

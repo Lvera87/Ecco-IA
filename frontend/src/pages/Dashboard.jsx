@@ -55,7 +55,7 @@ const Dashboard = () => {
   }, [isMounted]);
 
   // Micro-Contexts: User domain (profile, gamification)
-  const { userProfile, missions, claimMission, syncGamification } = useUser();
+  const { userProfile, gamificationStats, missions, claimMission, syncGamification } = useUser();
 
   // Micro-Contexts: Energy domain (appliances, consumption, insights)
   const {
@@ -525,7 +525,7 @@ const Dashboard = () => {
       <ConsumptionModal
         isOpen={isConsumptionModalOpen}
         onClose={() => setIsConsumptionModalOpen(false)}
-        currentGoal={goals?.monthlyBudget}
+        currentGoal={targetMonthlyBill}
         lastReading={latestReading}
         onSave={handleSaveConsumption}
       />

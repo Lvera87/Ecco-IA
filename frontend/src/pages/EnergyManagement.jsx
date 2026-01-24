@@ -18,7 +18,10 @@ import EmptyState from '../components/ui/EmptyState';
 import InsightCard from '../components/ui/InsightCard';
 import AddApplianceModal from '../components/ui/AddApplianceModal';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { useApp } from '../context/AppContext';
+// Micro-Contexts Architecture
+import { useUser } from '../context/UserContext';
+import { useEnergy, iconMap } from '../context/EnergyContext';
+import { useUI } from '../context/UIContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
 
 // Custom Tooltip for Charts
@@ -78,11 +81,17 @@ const EnergyManagement = () => {
     const [applianceToDelete, setApplianceToDelete] = useState(null);
     const [isReady, setIsReady] = useState(false);
 
+    // Micro-Contexts: User domain
+    const { userProfile } = useUser();
+
+    // Micro-Contexts: Energy domain
     const {
-        userProfile, appliances, consumptionHistory,
-        iconMap, removeAppliance, toggleAppliance,
-        addNotification, syncDashboardData
-    } = useApp();
+        appliances, consumptionHistory, removeAppliance,
+        toggleAppliance, syncEnergyData: syncDashboardData
+    } = useEnergy();
+
+    // Micro-Contexts: UI domain
+    const { addNotification } = useUI();
 
     const {
         formatMoney, totalMonthlyCost, projectedBill,
