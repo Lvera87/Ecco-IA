@@ -28,19 +28,29 @@ class ResidentialService:
         """
         Genera una visión 360 del hogar: Financiero + Técnico + IA.
         """
-        # 1. Datos base
-        profile_res = await db.execute(select(ResidentialProfile).where(ResidentialProfile.user_id == user_id))
-        assets_res = await db.execute(select(ResidentialAsset).where(ResidentialAsset.user_id == user_id))
-        readings_res = await db.execute(
-            select(ConsumptionReading)
-            .where(ConsumptionReading.user_id == user_id)
-            .order_by(ConsumptionReading.date.desc())
-            .limit(10)
-        )
+        from app.models.user import User
+        from sqlalchemy.orm import selectinload
         
-        profile = profile_res.scalar_one_or_none()
-        assets = assets_res.scalars().all()
-        readings = readings_res.scalars().all()
+        # 1. Carga optimizada de todo el grafo del usuario (Senior Pattern)
+        query = (
+            select(User)
+            .where(User.id == user_id)
+            .options(
+                selectinload(User.residential_profile),
+                selectinload(User.residential_assets),
+                selectinload(User.consumption_readings)
+            )
+        )
+        result = await db.execute(query)
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return {}
+
+        profile = user.residential_profile
+        assets = user.residential_assets
+        # Tomar las últimas 10 lecturas directamente de la relación cargada
+        readings = sorted(user.consumption_readings, key=lambda x: x.date, reverse=True)[:10]
 
         # 2. Análisis Técnico de Activos
         stratum = profile.stratum if profile else 3

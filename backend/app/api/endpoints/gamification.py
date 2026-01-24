@@ -49,7 +49,7 @@ async def complete_mission(
     user_mission = await gamification_service.complete_mission(db, current_user.id, mission_id)
     if not user_mission:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="La misión no pudo ser completada o ya lo está."
         )
     return user_mission

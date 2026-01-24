@@ -35,4 +35,4 @@ class IndustrialSettings(Base):
     peak_shaving_enabled = Column(Boolean, default=True)
     
     # Relationship
-    user = relationship("User", backref="industrial_settings")
+    user = relationship("User", back_populates="industrial_settings")

@@ -156,7 +156,7 @@ async def chat_with_assistant(
     """Conversación directa con el experto del hogar (Gemini)"""
     from app.services.gemini_service import gemini_service
     
-    # Obtener contexto del hogar
+    # Eager load para evitar múltiples queries (Senior Pattern)
     result_profile = await db.execute(select(ProfileModel).where(ProfileModel.user_id == current_user.id))
     profile = result_profile.scalar_one_or_none()
     
@@ -166,18 +166,16 @@ async def chat_with_assistant(
     home_context = {
         "stratum": profile.stratum if profile else 3,
         "housing": profile.house_type if profile else "apartamento",
-        "appliances": [f"{a.name} ({a.icon})" for a in assets]
+        "appliances": [f"{a.name} ({a.icon})" for a in assets],
+        "city": profile.city if profile else "Colombia"
     }
     
-    prompt = (
-        f"Eres un experto en eficiencia energética residencial. Ayuda al usuario a ahorrar dinero y energía.\n"
-        f"Contexto del hogar del usuario: {home_context}.\n"
-        f"Pregunta del usuario: {message}\n"
-        f"Responde de forma amable, práctica y enfocada en el contexto colombiano (Estratos, COP)."
+    # 2. Consultar el motor centralizado de IA
+    return await gemini_service.get_chat_response(
+        message=message,
+        context=home_context,
+        profile_type="residential"
     )
-    
-    response = await gemini_service.model.generate_content_async(prompt)
-    return {"response": response.text}
 
 # --- DASHBOARD INSIGHTS ---
 

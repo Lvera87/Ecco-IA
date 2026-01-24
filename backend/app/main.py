@@ -1,4 +1,6 @@
+
 """FastAPI application entrypoint."""
+
 from __future__ import annotations
 
 import logging
@@ -57,6 +59,18 @@ def create_app() -> FastAPI:
     @application.get("/", tags=["root"], summary="Root welcome message")
     async def read_root() -> dict[str, str]:
         return {"message": f"Welcome to {settings.app_name}!"}
+
+    @application.on_event("startup")
+    async def startup_event():
+        from app.db.session import get_async_session
+        from app.services.gamification import gamification_service
+        async for db in get_async_session():
+            try:
+                await gamification_service.seed_initial_missions(db)
+                logger.info("Master missions seeded successfully")
+                break # Solo necesitamos una sesión
+            except Exception as e:
+                logger.error(f"Failed to seed missions on startup: {e}")
 
     logger.info("Application started in %s mode", settings.environment)
     return application

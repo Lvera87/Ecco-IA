@@ -46,15 +46,26 @@ class IndustrialService:
         """
         Calcula las métricas globales de la planta y solicita una auditoría a la IA.
         """
-        # 1. Fetch data
-        assets_query = select(IndustrialAsset).where(IndustrialAsset.user_id == user_id)
-        settings_query = select(IndustrialSettings).where(IndustrialSettings.user_id == user_id)
+        from app.models.user import User
+        from sqlalchemy.orm import selectinload
         
-        assets_res = await db.execute(assets_query)
-        settings_res = await db.execute(settings_query)
+        # 1. Carga optimizada (Service Pattern + Performance)
+        query = (
+            select(User)
+            .where(User.id == user_id)
+            .options(
+                selectinload(User.industrial_settings),
+                selectinload(User.industrial_assets)
+            )
+        )
+        result = await db.execute(query)
+        user = result.scalar_one_or_none()
         
-        assets = assets_res.scalars().all()
-        settings = settings_res.scalar_one_or_none()
+        if not user:
+            return self._empty_dashboard_state("USD")
+
+        assets = user.industrial_assets
+        settings = user.industrial_settings
         
         currency = settings.currency_code if settings else "USD"
         cost_per_kwh = settings.energy_cost_per_kwh if settings else 0.15

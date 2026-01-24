@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Zap, Plus, Activity, Building2, Factory, Trash2, Loader2, Target
+  Zap, Plus, Activity, Building2, Factory, Trash2, Loader2, Target, Trophy
 } from 'lucide-react';
 
 // UI Components
@@ -265,7 +265,7 @@ const IndustrialDashboard = () => {
 
         {/* --- Multi-Column Main Content --- */}
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
-          
+
           {/* Left: Technical Inventory (3 Columns) */}
           <section className="xl:col-span-3 space-y-8">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-6">
@@ -305,12 +305,12 @@ const IndustrialDashboard = () => {
 
           {/* Right: Gamification & Missions (1 Column) */}
           <aside className="xl:col-span-1 space-y-6">
-            <MissionWidget 
+            <MissionWidget
               missions={data.gamification?.active_missions || []}
               onComplete={handleCompleteMission}
               loading={loading}
             />
-            
+
             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/20">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-white/10 rounded-lg">

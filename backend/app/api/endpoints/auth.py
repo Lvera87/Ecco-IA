@@ -31,6 +31,9 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_asyn
     Registra un nuevo usuario con su perfil específico (residencial o industrial).
     Retorna tokens para auto-login inmediato.
     """
+    import logging
+    logger = logging.getLogger("app.auth")
+    logger.info(f"Registrando nuevo usuario: {payload.username} ({payload.user_type})")
     # Verificar si el usuario ya existe
     existing = await db.execute(
         select(User).where((User.username == payload.username) | (User.email == payload.email))
@@ -46,7 +49,8 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_asyn
         username=payload.username,
         email=payload.email,
         full_name=payload.full_name,
-        hashed_password=get_password_hash(payload.password)
+        hashed_password=get_password_hash(payload.password),
+        user_type=payload.user_type
     )
     db.add(new_user)
     await db.flush()  # Obtener ID sin commit
@@ -78,7 +82,6 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_asyn
     db.add(gami_profile)
     
     await db.commit()
-    await db.refresh(new_user)
     
     # Auto-login: generar tokens
     tokens = await create_tokens_for_user(new_user)
@@ -96,13 +99,8 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_async_sess
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
         
-        # Determinar tipo de usuario
-        res_profile = await db.execute(select(ResidentialProfile).where(ResidentialProfile.user_id == user.id))
-        has_res = res_profile.scalar_one_or_none()
-        user_type = "residential" if has_res else "industrial"
-        
         tokens = await create_tokens_for_user(user)
-        return TokenResponse(**tokens, user_type=user_type)
+        return TokenResponse(**tokens, user_type=user.user_type)
     except HTTPException:
         raise
     except Exception as e:
