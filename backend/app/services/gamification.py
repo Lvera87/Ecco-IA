@@ -19,8 +19,7 @@ class GamificationService:
 
     async def get_or_create_profile(self, db: AsyncSession, user_id: int) -> GamificationProfile:
         """Asegura que el usuario tenga un perfil de gamificación y misiones iniciales."""
-        # 0. Asegurar que las misiones maestras existan
-        await self.seed_initial_missions(db)
+
 
         result = await db.execute(select(GamificationProfile).where(GamificationProfile.user_id == user_id))
         profile = result.scalar_one_or_none()
