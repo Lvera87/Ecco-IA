@@ -94,8 +94,13 @@ class ResidentialService:
 
         # 3. Análisis de Consumo real (Lecturas)
         latest_reading_kwh = readings[0].reading_value if readings else 0
-        projected_bill_real = latest_reading_kwh * 30 * kwh_price if readings else total_estimated_monthly_cost
+        projected_kwh = latest_reading_kwh * 30 if readings else (total_estimated_monthly_cost / kwh_price if kwh_price > 0 else 0)
+        projected_bill_real = projected_kwh * kwh_price
         
+        # Carbon Footprint (Fórmula estándar: 1 kWh ~ 0.164 kg CO2e)
+        co2_footprint = projected_kwh * 0.164
+        trees_equivalent = round(co2_footprint / 20) # 1 árbol compensa ~20kg CO2/año
+
         # 4. Contexto para Gemini
         home_context = {
             "house_type": profile.house_type if profile else "Hogar",
@@ -105,22 +110,24 @@ class ResidentialService:
             "high_impact_assets": high_impact_assets[:3],
             "recent_readings": [r.reading_value for r in readings[:5]],
             "monthly_budget": profile.target_monthly_bill if profile else 0,
-            "estimated_cost": total_estimated_monthly_cost
+            "estimated_monthly_cost": total_estimated_monthly_cost,
+            "projected_kwh_month": projected_kwh
         }
 
         # 5. Auditoría de IA
         ai_output = await gemini_service.get_residential_insights(home_context)
 
         return {
-            # Inteligencia y Cálculos Dinámicos (Lo que NO está en el perfil estático)
             "metrics": {
                 "kwh_price": kwh_price,
                 "efficiency_score": ai_output.get("efficiency_score", 85),
                 "vampire_cost_monthly": round(vampire_kwh_monthly * kwh_price),
                 "projected_bill": round(projected_bill_real),
+                "projected_kwh": round(projected_kwh),
                 "total_estimated_monthly_cost": round(total_estimated_monthly_cost),
                 "potential_savings": f"$ {round(vampire_kwh_monthly * kwh_price * 0.8)}",
-                "trees_equivalent": round(latest_reading_kwh * 0.5) if readings else 0 # Ejemplo de cálculo dinámico
+                "co2_footprint": round(co2_footprint, 2),
+                "trees_equivalent": trees_equivalent
             },
             "analysis": {
                 "total_assets": len(assets),

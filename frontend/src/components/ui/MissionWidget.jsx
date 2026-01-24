@@ -34,15 +34,18 @@ const MissionWidget = ({ missions, onComplete, loading }) => {
                     Misiones Activas
                 </h3>
                 <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full uppercase tracking-tighter font-bold">
-                    +{missions.reduce((acc, m) => acc + m.mission.xp_reward, 0)} XP Total
+                    +{missions.reduce((acc, m) => acc + (m.mission?.xp_reward || m.xp_reward || 0), 0)} XP Total
                 </span>
             </div>
 
             <div className="divide-y divide-white/5">
-                {missions.map((um) => {
-                    const IconComp = ICON_MAP[um.mission.icon] || Zap;
+                {missions.map((um, idx) => {
+                    const missionData = um.mission || um;
+                    if (!missionData) return null;
+                    const IconComp = ICON_MAP[missionData.icon] || Zap;
+
                     return (
-                        <div key={um.id} className="p-4 hover:bg-white/5 transition-colors group">
+                        <div key={um.id || idx} className="p-4 hover:bg-white/5 transition-colors group">
                             <div className="flex gap-4">
                                 <div className="p-2.5 bg-emerald-500/10 rounded-xl h-fit border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
                                     <IconComp className="w-5 h-5 text-emerald-400" />
@@ -51,27 +54,27 @@ const MissionWidget = ({ missions, onComplete, loading }) => {
                                 <div className="flex-1">
                                     <div className="flex justify-between items-start mb-1">
                                         <h4 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
-                                            {um.mission.title}
+                                            {missionData.title}
                                         </h4>
                                         <span className="text-[10px] text-emerald-400 font-mono">
-                                            +{um.mission.xp_reward} XP
+                                            +{missionData.xp_reward} XP
                                         </span>
                                     </div>
                                     <p className="text-xs text-white/60 line-clamp-2 mb-3">
-                                        {um.mission.description}
+                                        {missionData.description}
                                     </p>
 
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1 max-w-[120px] h-1 bg-white/10 rounded-full mr-4">
                                             <div
                                                 className="h-full bg-emerald-500 rounded-full"
-                                                style={{ width: `${um.progress * 100}%` }}
+                                                style={{ width: `${(um.progress || 0) * 100}%` }}
                                             />
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => onComplete(um.mission.id)}
+                                            onClick={() => onComplete(missionData.id)}
                                             className="text-[10px] h-7 px-3 py-0 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                                         >
                                             Completar <ArrowRight className="w-3 h-3 ml-1" />
@@ -83,6 +86,7 @@ const MissionWidget = ({ missions, onComplete, loading }) => {
                     );
                 })}
             </div>
+
         </div>
     );
 };
