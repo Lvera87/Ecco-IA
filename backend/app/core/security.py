@@ -36,13 +36,13 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
         "type": "access",
         "iss": "ecco-ia-auth"
     })
-    return jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
+    token = jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
+    return token.decode("utf-8") if isinstance(token, bytes) else token
 
 def create_refresh_token(data: Dict[str, Any]) -> str:
     """Crea un Refresh Token JWT de larga duración (ej. 30 días)."""
     to_encode = data.copy()
     now = datetime.utcnow()
-    # Los refresh tokens suelen durar mucho más, ej: 30 días
     expire = now + timedelta(days=30)
     
     to_encode.update({
@@ -51,7 +51,8 @@ def create_refresh_token(data: Dict[str, Any]) -> str:
         "type": "refresh",
         "iss": "ecco-ia-auth"
     })
-    return jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
+    token = jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
+    return token.decode("utf-8") if isinstance(token, bytes) else token
 
 def decode_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
     """

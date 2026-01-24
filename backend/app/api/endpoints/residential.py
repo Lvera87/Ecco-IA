@@ -55,12 +55,18 @@ async def list_assets(
     db: AsyncSession = Depends(get_async_session)
 ):
     """Lista los electrodomésticos registrados con cálculos de costo actualizados"""
-    result = await db.execute(select(AssetModel).where(AssetModel.user_id == current_user.id))
-    assets = result.scalars().all()
+    # 1. Obtener equipos
+    assets_result = await db.execute(select(AssetModel).where(AssetModel.user_id == current_user.id))
+    assets = assets_result.scalars().all()
+
+    # 2. Obtener el precio del kWh basado en el estrato del perfil para el cálculo
+    profile_result = await db.execute(select(ProfileModel).where(ProfileModel.user_id == current_user.id))
+    profile = profile_result.scalar_one_or_none()
+    kwh_price = residential_service.get_kwh_price(profile.stratum if profile else 3)
     
-    # Recalcular costos en demanda para asegurar precisión (Source of Truth)
+    # 3. Recalcular costos en demanda para asegurar precisión (Source of Truth)
     for a in assets:
-        a.monthly_cost_estimate = residential_service.calculate_appliance_cost(a.power_watts, a.daily_hours)
+        a.monthly_cost_estimate = residential_service.calculate_appliance_cost(a.power_watts, a.daily_hours, kwh_price)
     
     return assets
 
@@ -74,13 +80,18 @@ async def add_assets(
     Registra uno o varios electrodomésticos. 
     Unifica la creación individual y masiva (Batch) en una sola lógica clara.
     """
+    # Precio base para nuevos registros
+    profile_result = await db.execute(select(ProfileModel).where(ProfileModel.user_id == current_user.id))
+    profile = profile_result.scalar_one_or_none()
+    kwh_price = residential_service.get_kwh_price(profile.stratum if profile else 3)
+
     new_assets = []
     for asset_in in assets_in:
         asset_data = asset_in.model_dump()
         asset_data["monthly_cost_estimate"] = residential_service.calculate_appliance_cost(
             asset_data.get("power_watts", 0), 
             asset_data.get("daily_hours", 0),
-            residential_service.get_kwh_price(current_user.residential_profile.stratum if current_user.residential_profile else 3)
+            kwh_price
         )
         asset = AssetModel(**asset_data, user_id=current_user.id)
         db.add(asset)
@@ -103,6 +114,34 @@ async def delete_asset(
     await db.delete(asset)
     await db.commit()
     return None
+
+@router.patch("/assets/{asset_id}", response_model=ResidentialAsset)
+async def update_asset(
+    asset_id: int,
+    asset_update: dict,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_async_session)
+):
+    """Actualiza propiedades de un electrodoméstico (ej: status, hours)"""
+    result = await db.execute(select(AssetModel).where(AssetModel.id == asset_id, AssetModel.user_id == current_user.id))
+    asset = result.scalar_one_or_none()
+    if not asset: raise HTTPException(status_code=404, detail="No encontrado")
+    
+    for key, value in asset_update.items():
+        if hasattr(asset, key):
+            setattr(asset, key, value)
+            
+    # Obtener el precio del kWh para recalcular
+    profile_result = await db.execute(select(ProfileModel).where(ProfileModel.user_id == current_user.id))
+    profile = profile_result.scalar_one_or_none()
+    kwh_price = residential_service.get_kwh_price(profile.stratum if profile else 3)
+    
+    # Recalcular costo si cambiaron watts u horas
+    asset.monthly_cost_estimate = residential_service.calculate_appliance_cost(asset.power_watts, asset.daily_hours, kwh_price)
+    
+    await db.commit()
+    await db.refresh(asset)
+    return asset
 
 # --- CONSUMPTION ENDPOINTS ---
 
