@@ -13,7 +13,9 @@ import StatCard from '../components/ui/StatCard';
 import InsightCard from '../components/ui/InsightCard';
 import EmptyState from '../components/ui/EmptyState';
 import GoalsModal from '../components/ui/GoalsModal';
-import { useApp } from '../context/AppContext';
+import { useUser } from '../context/UserContext';
+import { useEnergy } from '../context/EnergyContext';
+import { useUI } from '../context/UIContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
 
 // Custom Tooltip
@@ -50,7 +52,9 @@ const EnergyAnalysis = () => {
     }
   }, [isMounted]);
 
-  const { userProfile, consumptionHistory, addNotification } = useApp();
+  const { userProfile } = useUser();
+  const { consumptionHistory } = useEnergy();
+  const { addNotification } = useUI();
 
   const {
     latestReading, projectedKwh, kwhPrice, hasData,
