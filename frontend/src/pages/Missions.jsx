@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Trophy, Star, Target, Flame, Clock, Zap, Leaf, Award,
   ChevronRight, CheckCircle, Lock, Gift, TrendingUp,
@@ -6,7 +6,9 @@ import {
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { useApp } from '../context/AppContext';
+// Micro-Contexts Architecture
+import { useUser } from '../context/UserContext';
+import { iconMap } from '../context/EnergyContext';
 
 // Mission Card Component
 const MissionCard = ({ mission, onClaim, iconMap }) => {
@@ -122,7 +124,14 @@ const AchievementBadge = ({ achievement }) => {
 
 const Missions = () => {
   const [activeTab, setActiveTab] = useState('all');
-  const { missions, claimMission, userProfile, iconMap } = useApp();
+
+  // Micro-Context: User domain (gamification)
+  const { missions, claimMission, userProfile, syncGamification } = useUser();
+
+  // Sync gamification data on mount
+  useEffect(() => {
+    syncGamification();
+  }, []);
 
   const achievements = [
     { id: 1, name: 'Primer Paso', icon: Star, unlocked: true, rarity: 'common' },

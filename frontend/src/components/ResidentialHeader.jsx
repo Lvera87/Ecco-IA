@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Plus, Award } from 'lucide-react';
+import { useUser } from '../context/UserContext';
 import Button from './ui/Button';
 import NotificationsPanel from './ui/NotificationsPanel';
 import AddApplianceModal from './ui/AddApplianceModal';
-import { useApp } from '../context/AppContext';
 
 const ResidentialHeader = () => {
   const navigate = useNavigate();
-  const { userProfile } = useApp();
+  const { userProfile } = useUser();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   return (

@@ -5,7 +5,8 @@ import {
     Zap, Trophy, Target, Leaf
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import { useUser } from '../context/UserContext';
+import { useUI } from '../context/UIContext';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
@@ -39,7 +40,10 @@ const StatBadge = ({ icon: Icon, value, label, color }) => (
 
 const UserProfile = () => {
     const navigate = useNavigate();
-    const { userProfile, theme, setTheme, goals } = useApp();
+    const { userProfile } = useUser();
+    const { theme, setTheme } = useUI();
+    // Default fallback values until goals are properly implemented in backend
+    const goals = { monthlyBudget: 150000, co2Reduction: 15 };
 
     const [editMode, setEditMode] = useState(false);
     const [profileData, setProfileData] = useState({

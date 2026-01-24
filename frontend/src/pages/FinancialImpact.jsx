@@ -13,7 +13,8 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import StatCard from '../components/ui/StatCard';
 import EmptyState from '../components/ui/EmptyState';
-import { useApp } from '../context/AppContext';
+import { useEnergy } from '../context/EnergyContext';
+import { useUI } from '../context/UIContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
 
 // Custom Tooltip for Charts
@@ -152,7 +153,8 @@ const FinancialImpact = () => {
     }
   }, [isMounted]);
 
-  const { addNotification, consumptionHistory } = useApp();
+  const { addNotification } = useUI();
+  const { consumptionHistory } = useEnergy();
   const {
     formatMoney, totalMonthlyCost, projectedBill,
     vampireMoneyLost, hasData

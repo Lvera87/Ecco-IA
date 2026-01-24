@@ -13,7 +13,10 @@ import InsightCard from '../components/ui/InsightCard';
 import EmptyState from '../components/ui/EmptyState';
 import AddApplianceModal from '../components/ui/AddApplianceModal';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { useApp } from '../context/AppContext';
+import AddApplianceModal from '../components/ui/AddApplianceModal';
+import ConfirmationModal from '../components/ui/ConfirmationModal';
+import { useEnergy, iconMap } from '../context/EnergyContext';
+import { useUI } from '../context/UIContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
 
 const Appliances = () => {
@@ -23,9 +26,11 @@ const Appliances = () => {
   const [applianceToDelete, setApplianceToDelete] = useState(null);
 
   const {
-    iconMap, removeAppliance, toggleAppliance,
-    addNotification, syncDashboardData, isSyncing
-  } = useApp();
+    removeAppliance, toggleAppliance,
+    syncEnergyData: syncDashboardData, isSyncing
+  } = useEnergy();
+
+  const { addNotification } = useUI();
 
 
   React.useEffect(() => {
