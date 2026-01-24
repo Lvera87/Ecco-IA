@@ -21,6 +21,7 @@ from app.models.industrial_asset import IndustrialAsset
 from app.models.industrial_settings import IndustrialSettings
 from app.models.roi_scenario import RoiScenario
 from app.models.residential import ResidentialProfile, ResidentialAsset, ConsumptionReading
+from app.models.gamification import GamificationProfile, Mission, UserMission
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

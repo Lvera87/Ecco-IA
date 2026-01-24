@@ -90,17 +90,28 @@ async def chat_with_assistant(
     db: AsyncSession = Depends(get_async_session)
 ):
     """Conversación directa con el experto de la planta (Gemini)"""
+    from app.services.gemini_service import gemini_service
+    
+    # Obtener activos para contexto
     result = await db.execute(select(AssetModel).where(AssetModel.user_id == current_user.id))
     assets = result.scalars().all()
     
-    plant_context = [
-        f"Activo: {a.name} ({a.asset_type}), Potencia: {a.nominal_power_kw}kW, Eficiencia: {a.efficiency_percentage}%"
-        for a in assets
-    ]
+    plant_context = {
+        "assets": [
+            {
+                "name": a.name, 
+                "type": a.asset_type, 
+                "power_kw": a.nominal_power_kw, 
+                "efficiency": a.efficiency_percentage
+            } for a in assets
+        ]
+    }
     
-    prompt = f"Eres un experto en eficiencia industrial. Contexto de planta: {', '.join(plant_context)}. Pregunta: {message}"
-    response = await gemini_service.model.generate_content_async(prompt)
-    return {"response": response.text}
+    return await gemini_service.get_chat_response(
+        message=message,
+        context=plant_context,
+        profile_type="industrial"
+    )
 
 @router.get("/consumption-analysis")
 async def get_consumption_analysis(

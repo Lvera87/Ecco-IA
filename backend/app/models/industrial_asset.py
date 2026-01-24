@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, CheckConstraint, Index
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
 
@@ -19,6 +20,8 @@ class IndustrialAsset(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User", back_populates="industrial_assets")
 
     # Relación con usuario e Indexación para performance
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)

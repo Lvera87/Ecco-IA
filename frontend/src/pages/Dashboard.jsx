@@ -139,7 +139,7 @@ const Dashboard = () => {
     try {
       // Persistir en backend
       await residentialApi.addReading({
-        reading_value: parseFloat(data.value),
+        reading_value: parseFloat(data.reading),
         reading_type: 'manual'
       });
       setIsConsumptionModalOpen(false);

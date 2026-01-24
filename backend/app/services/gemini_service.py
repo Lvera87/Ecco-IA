@@ -109,4 +109,48 @@ class GeminiService:
             logger.error(f"Error calling Gemini Residential: {e}")
             return {}
 
+    async def get_chat_response(self, message: str, context: dict, profile_type: str = "residential") -> dict:
+        """
+        Maneja una conversación fluida con el usuario inyectando contexto técnico.
+        """
+        if not self.client:
+            return {"response": "Lo siento, el servicio de IA no está configurado."}
+
+        role_desc = "Residencial" if profile_type == "residential" else "Industrial"
+        
+        prompt = f"""
+        Eres el asistente inteligente de Ecco-IA para el sector {role_desc}.
+        Tu objetivo es ayudar al usuario a entender sus datos de energía y proponer ahorros.
+        
+        CONTEXTO ACTUAL DEL USUARIO:
+        {json.dumps(context, indent=2)}
+        
+        MENSAJE DEL USUARIO:
+        {message}
+        
+        INSTRUCCIONES:
+        1. Sé profesional pero cercano.
+        2. Si el usuario pregunta cosas técnicas, usa el contexto proporcionado (estrato, equipos, consumos).
+        3. Si eres residencial, habla de 'vampiros energéticos' y electrodomésticos.
+        4. Si eres industrial, habla de 'factor de carga', 'penalidades por reactiva' y 'ROI'.
+        5. Responde en español.
+        
+        RESPUESTA (JSON):
+        {{ "response": "tu respuesta aquí" }}
+        """
+        
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
+            import re
+            json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group(0))
+            return {"response": response.text}
+        except Exception as e:
+            logger.error(f"Error in Gemini Chat: {e}")
+            return {"response": "Tuve un pequeño corto circuito mental. ¿Podrías repetir la pregunta?"}
+
 gemini_service = GeminiService()
