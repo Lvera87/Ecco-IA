@@ -25,13 +25,10 @@ export const residentialApi = {
         return response.data;
     },
 
-    createAsset: async (assetData) => {
-        const response = await client.post('/residential/assets', assetData);
-        return response.data;
-    },
-
-    createAssetBatch: async (assets) => {
-        const response = await client.post('/residential/assets/batch', assets);
+    addAssets: async (assets) => {
+        // Asegurar que enviamos un array al backend unificado
+        const payload = Array.isArray(assets) ? assets : [assets];
+        const response = await client.post('/residential/assets', payload);
         return response.data;
     },
 
