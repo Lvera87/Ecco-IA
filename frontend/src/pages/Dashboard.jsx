@@ -235,28 +235,107 @@ const Dashboard = () => {
           {/* Left Column: Primary Content (3 cols) */}
           <div className="xl:col-span-3 space-y-8">
 
+            {/* Home Profile Summary Card */}
+            {userProfile?.config && (
+              <Card className="p-6 bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl"></div>
+                <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
+                  {/* Left: House Info */}
+                  <div className="flex items-center gap-4">
+                    <div className="size-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <Zap size={24} className="text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-display font-bold text-white">
+                        {userProfile.config.house_type === 'apartment' ? '🏢 Apartamento' :
+                          userProfile.config.house_type === 'house' ? '🏠 Casa' : '🏬 Estudio'}
+                        {userProfile.config.area_sqm ? ` de ${userProfile.config.area_sqm}m²` : ''}
+                      </h3>
+                      <p className="text-sm text-slate-400">
+                        {userProfile.config.city ? userProfile.config.city.charAt(0).toUpperCase() + userProfile.config.city.slice(1) : 'Colombia'}
+                        {userProfile.config.stratum ? ` • Estrato ${userProfile.config.stratum}` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Center: Occupancy & Energy */}
+                  <div className="flex flex-wrap gap-6">
+                    <div className="text-center px-4 border-l border-slate-700/50">
+                      <span className="text-2xl font-display font-bold text-white">{userProfile.config.occupants || 1}</span>
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-1">Habitantes</p>
+                    </div>
+                    <div className="text-center px-4 border-l border-slate-700/50">
+                      <span className="text-sm font-bold text-white capitalize">
+                        {userProfile.config.occupancy_profile === 'onsite' ? '🏃 Fuera de Casa' :
+                          userProfile.config.occupancy_profile === 'hybrid' ? '💻 Híbrido' : '👨‍👩‍👧 Casa Llena'}
+                      </span>
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-1">Rutina</p>
+                    </div>
+                    <div className="text-center px-4 border-l border-slate-700/50">
+                      <span className="text-sm font-bold text-white">
+                        {userProfile.config.energy_source === 'gas' ? '🔥 Gas Natural' : '⚡ Todo Eléctrico'}
+                      </span>
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-1">Fuente</p>
+                    </div>
+                  </div>
+
+                  {/* Right: Budget Goals */}
+                  <div className="flex items-center gap-4 bg-slate-950/50 rounded-xl p-3 border border-slate-700/50">
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Meta Mensual</p>
+                      <p className="text-lg font-display font-bold text-emerald-400">
+                        {userProfile.config.target_monthly_bill ? formatMoney(userProfile.config.target_monthly_bill) : 'Sin definir'}
+                      </p>
+                    </div>
+                    <div className="w-px h-10 bg-slate-700"></div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Promedio Actual</p>
+                      <p className="text-lg font-display font-bold text-amber-400">
+                        {userProfile.config.monthly_bill_avg ? formatMoney(userProfile.config.monthly_bill_avg) : 'Sin datos'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tariff Info Bar */}
+                <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">
+                    Tarifa aplicada: <span className="text-emerald-400 font-bold">${residentialInsights?.metrics?.kwh_price || kwhPrice}/kWh</span>
+                  </span>
+                  <span className="text-slate-500">
+                    {residentialInsights?.analysis?.total_assets || 0} dispositivos registrados
+                  </span>
+                  {userProfile.config.average_kwh_captured > 0 && (
+                    <span className="text-slate-500">
+                      Consumo capturado: <span className="text-white font-bold">{userProfile.config.average_kwh_captured} kWh/mes</span>
+                    </span>
+                  )}
+                </div>
+              </Card>
+            )}
+
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard
                 title="Proyección Factura"
-                value={residentialInsights ? formatMoney(residentialInsights.projected_bill) : formatMoney(projectedBill)}
+                value={formatMoney(residentialInsights?.metrics?.projected_bill || projectedBill)}
                 unit="/ mes"
                 icon={DollarSign}
                 color="emerald"
               />
               <StatCard
                 title="Costo Vampiro"
-                value={residentialInsights ? formatMoney(residentialInsights.vampire_cost_monthly) : formatMoney(vampireMoneyLost)}
+                value={formatMoney(residentialInsights?.metrics?.vampire_cost_monthly || vampireMoneyLost)}
                 unit="/ mes"
                 icon={TrendingDown}
-                color={(residentialInsights?.vampire_cost_monthly || vampireMoneyLost) > 25000 ? "red" : "amber"}
+                color={(residentialInsights?.metrics?.vampire_cost_monthly || vampireMoneyLost) > 25000 ? "red" : "amber"}
               />
               <StatCard
                 title="Eficiencia Eco"
-                value={residentialInsights ? residentialInsights.efficiency_score : 85}
+                value={residentialInsights?.metrics?.efficiency_score || 85}
                 unit="%"
                 icon={Award}
-                color={(residentialInsights?.efficiency_score || 85) > 80 ? "emerald" : "blue"}
+                color={(residentialInsights?.metrics?.efficiency_score || 85) > 80 ? "emerald" : "blue"}
               />
               <StatCard
                 title="Meta de Ahorro"
@@ -394,6 +473,38 @@ const Dashboard = () => {
                 <span className="font-bold">{co2Footprint} kg</span>
               </div>
             </div>
+
+            {/* High Impact Assets */}
+            {residentialInsights?.analysis?.high_impact_assets?.length > 0 && (
+              <Card className="p-5 bg-amber-500/5 border-amber-500/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertCircle size={18} className="text-amber-500" />
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">Principales Consumidores</h4>
+                </div>
+                <div className="space-y-3">
+                  {residentialInsights.analysis.high_impact_assets.map((asset, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">{asset.name}</span>
+                      <span className="font-bold text-amber-600 dark:text-amber-400">{formatMoney(asset.cost)}/mes</span>
+                    </div>
+                  ))}
+                </div>
+                {residentialInsights.metrics?.potential_savings && (
+                  <div className="mt-4 pt-3 border-t border-amber-500/20 text-center">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Ahorro Potencial</p>
+                    <p className="text-lg font-display font-bold text-emerald-500">{residentialInsights.metrics.potential_savings}</p>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {/* Top Waste Reason */}
+            {residentialInsights?.analysis?.top_waste_reason && (
+              <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-xl">
+                <p className="text-[10px] uppercase tracking-widest text-red-400 font-bold mb-1">Principal Causa de Desperdicio</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{residentialInsights.analysis.top_waste_reason}</p>
+              </div>
+            )}
           </aside>
         </div>
       </main>

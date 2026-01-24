@@ -112,16 +112,23 @@ class ResidentialService:
         ai_output = await gemini_service.get_residential_insights(home_context)
 
         return {
-            "efficiency_score": ai_output.get("efficiency_score", 85),
-            "vampire_cost_monthly": round(vampire_kwh_monthly * kwh_price),
-            "projected_bill": round(projected_bill_real),
+            # Inteligencia y Cálculos Dinámicos (Lo que NO está en el perfil estático)
+            "metrics": {
+                "kwh_price": kwh_price,
+                "efficiency_score": ai_output.get("efficiency_score", 85),
+                "vampire_cost_monthly": round(vampire_kwh_monthly * kwh_price),
+                "projected_bill": round(projected_bill_real),
+                "total_estimated_monthly_cost": round(total_estimated_monthly_cost),
+                "potential_savings": f"$ {round(vampire_kwh_monthly * kwh_price * 0.8)}",
+                "trees_equivalent": round(latest_reading_kwh * 0.5) if readings else 0 # Ejemplo de cálculo dinámico
+            },
+            "analysis": {
+                "total_assets": len(assets),
+                "high_impact_assets": high_impact_assets[:5],
+                "top_waste_reason": ai_output.get("top_waste_reason", "Consumo Base Elevado")
+            },
             "ai_advice": ai_output.get("ai_advice", "Considera revisar los consumos en horas pico."),
-            "top_waste_reason": ai_output.get("top_waste_reason", "Consumo Base Elevado"),
-            "potential_savings": f"$ {round(vampire_kwh_monthly * kwh_price * 0.8)}",
-            "missions": ai_output.get("missions", [
-                {"id": 1, "title": "Caza Fantasmas", "xp": 100, "icon": "Zap"},
-                {"id": 2, "title": "Hogar Eficiente", "xp": 150, "icon": "Home"}
-            ])
+            "missions": ai_output.get("missions", [])
         }
 
 residential_service = ResidentialService()
