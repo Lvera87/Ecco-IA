@@ -59,7 +59,17 @@ async def get_current_user(
     except Exception:
         raise credentials_exception
         
-    result = await db.execute(select(User).where(User.id == int(user_id)))
+    from sqlalchemy.orm import selectinload
+    query = (
+        select(User)
+        .where(User.id == int(user_id))
+        .options(
+            selectinload(User.gamification_profile),
+            selectinload(User.industrial_settings),
+            selectinload(User.residential_profile)
+        )
+    )
+    result = await db.execute(query)
     user = result.scalar_one_or_none()
     
     if user is None:
