@@ -1,7 +1,0 @@
-{
-  "status": "init",
-  "scope": "codebase",
-  "type": "frontend",
-  "localEndpoint": "http://localhost:5173/dashboard",
-  "serverPort": 55414
-}
