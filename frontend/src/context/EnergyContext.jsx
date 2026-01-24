@@ -132,6 +132,25 @@ export const EnergyProvider = ({ children }) => {
         }
     };
 
+    const addConsumptionReading = async (reading) => {
+        try {
+            const saved = await residentialApi.addReading({
+                reading_value: parseFloat(reading.value || reading.reading),
+                reading_type: reading.type || 'manual'
+            });
+            setConsumptionHistory(prev => [{
+                id: saved.id,
+                date: saved.date,
+                value: saved.reading_value,
+                type: saved.reading_type
+            }, ...prev]);
+            return true;
+        } catch (error) {
+            console.error("Error adding consumption reading:", error);
+            return false;
+        }
+    };
+
     const value = {
         appliances,
         consumptionHistory,
@@ -141,6 +160,7 @@ export const EnergyProvider = ({ children }) => {
         addAppliance,
         removeAppliance,
         toggleAppliance,
+        addConsumptionReading,
         iconMap
     };
 

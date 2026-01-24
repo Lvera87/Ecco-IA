@@ -23,6 +23,7 @@ const Layout = ({ children }) => {
     '/carbon-footprint',
     '/residential-assistant',
     '/profile',
+    '/energy-management',
   ];
 
   const isMatch = (routes) => {

@@ -1,4 +1,11 @@
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Protocol
+
+
+class AssetLike(Protocol):
+    """Contrato mínimo que debe cumplir un activo para el cálculo vampiro."""
+    icon: str
+    is_high_impact: bool
+
 
 class EnergyCalculators:
     """
@@ -7,8 +14,8 @@ class EnergyCalculators:
     """
     
     ESTRATO_TARIFFS = {1: 350.0, 2: 450.0, 3: 680.0, 4: 850.0, 5: 1100.0, 6: 1400.0}
-    CO2_FACTOR = 0.164 # kg CO2e / kWh
-    TREE_COMPENSATION = 20.0 # kg CO2 / year per tree
+    CO2_FACTOR = 0.164  # kg CO2e / kWh
+    TREE_COMPENSATION = 20.0  # kg CO2 / year per tree
     
     @classmethod
     def get_kwh_price(cls, stratum: int) -> float:
@@ -31,7 +38,7 @@ class EnergyCalculators:
         return int(max(0, min(100, score)))
 
     @classmethod
-    def get_vampire_estimate(cls, assets: List[Any]) -> float:
+    def get_vampire_estimate(cls, assets: List[AssetLike]) -> float:
         """
         Estima el consumo standby (vampiro) basado en el tipo de equipo y su antigüedad.
         """
