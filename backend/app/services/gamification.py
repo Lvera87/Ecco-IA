@@ -53,7 +53,7 @@ class GamificationService:
         return profile
 
     async def get_user_missions(self, db: AsyncSession, user_id: int):
-        """Obtiene las misiones activas y completadas del usuario."""
+        """Obtiene las misiones activas y completadas del usuario con carga inmediata de misión."""
         from sqlalchemy.orm import selectinload
         query = (
             select(UserMission)

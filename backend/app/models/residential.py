@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, CheckConstraint, Index
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
 
@@ -22,6 +23,8 @@ class ResidentialProfile(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    user = relationship("User", back_populates="residential_profile")
 
     __table_args__ = (
         CheckConstraint('occupants >= 1', name='check_min_occupants'),
@@ -47,6 +50,8 @@ class ResidentialAsset(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    user = relationship("User", back_populates="residential_assets")
 
     __table_args__ = (
         CheckConstraint('power_watts >= 0', name='check_positive_power'),
@@ -64,6 +69,8 @@ class ConsumptionReading(Base):
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    user = relationship("User", back_populates="consumption_readings")
 
     __table_args__ = (
         CheckConstraint('reading_value >= 0', name='check_positive_reading'),
