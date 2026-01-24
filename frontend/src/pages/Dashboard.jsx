@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Zap, TrendingDown, Leaf, Trophy, Calendar, ChevronRight,
   Target, Award, DollarSign, Plus, Lightbulb, Wind, AlertCircle, Activity
@@ -111,10 +111,16 @@ const Dashboard = () => {
     }
   };
 
+  // Chart data flags (Jerarquía: 1. Lecturas diarias, 2. Histórico de factura)
+  const historyFromProfile = userProfile?.config?.history_kwh || [];
+  const hasManualReadings = consumptionHistory.length > 0;
+  const hasHistoricalData = historyFromProfile.length > 0;
+  const displayHasData = hasManualReadings || hasHistoricalData;
+
   // Occupancy-based efficiency status (Honest fallback)
   const occupants = userProfile.config?.occupants || 3;
   const kwhPerPerson = displayProjectedKwh / occupants;
-  const efficiencyStatus = !hasData ? 'unknown' : (kwhPerPerson < 45 ? 'excellent' : kwhPerPerson < 70 ? 'good' : 'bad');
+  const efficiencyStatus = !displayHasData ? 'unknown' : (kwhPerPerson < 45 ? 'excellent' : kwhPerPerson < 70 ? 'good' : 'bad');
 
 
   // Progress toward goal (Only show if target exists)
@@ -131,11 +137,24 @@ const Dashboard = () => {
 
   const activeAppliances = enrichedAppliances.filter(a => a.status).slice(0, 4);
 
-  // Chart data usando el historial real
-  const energyData = hasData ? consumptionHistory.map(r => ({
-    time: new Date(r.date).toLocaleDateString([], { day: '2-digit', month: 'short' }),
-    value: r.value
-  })).reverse() : [];
+  const energyData = useMemo(() => {
+    if (hasManualReadings) {
+      return consumptionHistory.map(r => ({
+        time: new Date(r.date).toLocaleDateString([], { day: '2-digit', month: 'short' }),
+        value: r.value,
+        type: 'diario'
+      })).reverse();
+    } else if (hasHistoricalData) {
+      // Usar los meses del recibo (ordenados de más viejo a más nuevo)
+      const months = ['Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; // O genéricos
+      return historyFromProfile.map((val, i) => ({
+        time: `Mes ${i + 1}`,
+        value: val,
+        type: 'mensual'
+      }));
+    }
+    return [];
+  }, [consumptionHistory, historyFromProfile, hasManualReadings, hasHistoricalData]);
 
   if (isSyncing && !dashboardInsights) {
     return (
@@ -165,7 +184,7 @@ const Dashboard = () => {
                 <Activity size={12} className="animate-pulse" /> Hogar Conectado
               </div>
               <p className="text-sm text-slate-500">
-                {hasData
+                {displayHasData
                   ? <>Proyección: <span className="text-emerald-500 font-bold">{formatMoney(displayProjectedBill)}</span> este mes</>
                   : 'Registra tu consumo para ver proyecciones'
                 }
@@ -212,9 +231,9 @@ const Dashboard = () => {
                   {/* Left: House Info */}
                   <div className="flex items-center gap-4">
                     <div className={`size-14 rounded-2xl flex items-center justify-center border transition-all duration-500 ${efficiencyStatus === 'excellent' ? 'bg-emerald-500/10 border-emerald-500/20' :
-                        efficiencyStatus === 'good' ? 'bg-blue-500/10 border-blue-500/20' :
-                          efficiencyStatus === 'bad' ? 'bg-red-500/10 border-red-500/20' :
-                            'bg-slate-500/10 border-slate-500/20'
+                      efficiencyStatus === 'good' ? 'bg-blue-500/10 border-blue-500/20' :
+                        efficiencyStatus === 'bad' ? 'bg-red-500/10 border-red-500/20' :
+                          'bg-slate-500/10 border-slate-500/20'
                       }`}>
                       <Zap size={24} className={
                         efficiencyStatus === 'excellent' ? 'text-emerald-400' :
@@ -283,7 +302,7 @@ const Dashboard = () => {
                     Tarifa aplicada: <span className="text-emerald-400 font-bold">${dashboardInsights?.metrics?.kwh_price || kwhPrice}/kWh</span>
                   </span>
                   <span className="text-slate-500">
-                    {dashboardInsights?.analysis?.total_assets || 0} dispositivos registrados
+                    {activeAppliances.length} dispositivos registrados
                   </span>
                   {userProfile.config.average_kwh_captured > 0 && (
                     <span className="text-slate-500">
@@ -331,10 +350,14 @@ const Dashboard = () => {
             <Card className="p-8 flex flex-col relative overflow-hidden bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white">Consumo Diario</h3>
-                  <p className="text-slate-500 text-sm mt-1">Estimación basada en tus reportes</p>
+                  <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white">
+                    {hasManualReadings ? 'Consumo Diario' : 'Historial de Factura'}
+                  </h3>
+                  <p className="text-slate-500 text-sm mt-1">
+                    {hasManualReadings ? 'Basado en tus reportes' : 'Análisis de los últimos 6 meses'}
+                  </p>
                 </div>
-                {hasData && (
+                {displayHasData && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                     <div className="size-2 bg-emerald-500 rounded-full animate-pulse"></div>
                     <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Monitor Activo</span>
@@ -342,10 +365,12 @@ const Dashboard = () => {
                 )}
               </div>
 
-              {hasData ? (
+              {displayHasData ? (
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-baseline gap-3 mb-8">
-                    <span className="text-6xl font-display font-bold text-slate-900 dark:text-white tracking-tighter">{latestReading}</span>
+                    <span className="text-6xl font-display font-bold text-slate-900 dark:text-white tracking-tighter">
+                      {hasManualReadings ? latestReading : historyFromProfile[historyFromProfile.length - 1]}
+                    </span>
                     <span className="text-2xl font-display font-medium text-slate-400 uppercase tracking-widest">kWh</span>
                   </div>
                   <div className="flex-1 w-full min-w-0" style={{ minHeight: '250px' }}>
