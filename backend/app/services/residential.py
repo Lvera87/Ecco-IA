@@ -11,18 +11,13 @@ class ResidentialService:
     análisis de consumo por persona y auditoría de IA.
     """
 
-    @staticmethod
-    def get_kwh_price(stratum: int) -> float:
-        """Retorna la tarifa por kWh según el estrato (Datos actualizados Colombia)."""
-        tariffs = {1: 350.0, 2: 450.0, 3: 680.0, 4: 850.0, 5: 1100.0, 6: 1400.0}
-        return tariffs.get(stratum, 680.0)
+from app.core.energy_logic import energy_calculators
 
-    @staticmethod
-    def calculate_appliance_cost(power_watts: float, daily_hours: float, kwh_price: float) -> float:
-        """Calcula el costo mensual estimado de un electrodoméstico."""
-        # kWh = (Watts * Horas) / 1000
-        monthly_kwh = (power_watts * daily_hours * 30) / 1000.0
-        return round(monthly_kwh * kwh_price, 2)
+class ResidentialService:
+    """
+    Servicio Residencial de Ecco-IA.
+    Orquesta la lógica entre la base de datos, los calculadores core y la IA.
+    """
 
     async def get_dashboard_insights(self, db: AsyncSession, user_id: int) -> Dict[str, Any]:
         """
@@ -31,7 +26,7 @@ class ResidentialService:
         from app.models.user import User
         from sqlalchemy.orm import selectinload
         
-        # 1. Carga optimizada de todo el grafo del usuario (Senior Pattern)
+        # 1. Carga optimizada (Senior Pattern)
         query = (
             select(User)
             .where(User.id == user_id)
@@ -49,56 +44,33 @@ class ResidentialService:
 
         profile = user.residential_profile
         assets = user.residential_assets
-        # Tomar las últimas 10 lecturas directamente de la relación cargada
         readings = sorted(user.consumption_readings, key=lambda x: x.date, reverse=True)[:10]
 
-        # 2. Análisis Técnico de Activos
+        # 2. Análisis Técnico vía Core
         stratum = profile.stratum if profile else 3
-        kwh_price = self.get_kwh_price(stratum)
+        kwh_price = energy_calculators.get_kwh_price(stratum)
         
         total_estimated_monthly_cost = 0.0
         high_impact_assets = []
-        vampire_kwh_monthly = 0.0
-
+        
         for a in assets:
-            # Si el equipo no tiene potencia definida, usamos promedios por categoría
-            power = a.power_watts
-            hours = a.daily_hours
-            
-            if power == 0:
-                # Valores por defecto por tipo de icono/nombre
-                defaults = {
-                    "fridge": (250, 8),      # 250W, 8h efectivas (ciclos)
-                    "washer": (500, 1),      # 500W, 1h promedio
-                    "ac": (1500, 4),        # 1.5kW, 4h
-                    "tv": (100, 5),         # 100W, 5h
-                    "stove_electric": (2000, 1),
-                    "heater_electric": (3000, 0.5),
-                }
-                power, hours = defaults.get(a.icon, (100, 2))
-                # Actualizamos en el objeto para la respuesta, pero no en DB aquí
-                a.power_watts = power
-                a.daily_hours = hours
+            if a.power_watts == 0:
+                # Defaults técnicos si no hay data
+                defaults = {"fridge": (250, 8), "washer": (500, 1), "ac": (1500, 4), "tv": (100, 5)}
+                a.power_watts, a.daily_hours = defaults.get(a.icon, (100, 2))
 
-            cost = self.calculate_appliance_cost(power, hours, kwh_price)
+            monthly_kwh = energy_calculators.calculate_monthly_kwh(a.power_watts, a.daily_hours)
+            cost = monthly_kwh * kwh_price
             total_estimated_monthly_cost += cost
             
             if a.is_high_impact or cost > 20000:
                 high_impact_assets.append({"name": a.name, "cost": cost})
-            
-            # Cálculo de vampiro (Fisica de Sentido Común)
-            # Standby real de equipos modernos es < 1W (aprox 0.7 kWh/mes)
-            if a.icon in ["tv", "monitor", "console", "desktop"]:
-                vampire_kwh_monthly += 2.5 if a.is_high_impact else 0.7 
-            elif a.icon == "fridge" and a.is_high_impact:
-                vampire_kwh_monthly += 8.0 
-            elif a.icon == "ac" and a.is_high_impact:
-                vampire_kwh_monthly += 1.5
 
-        # 3. Análisis de Consumo real (Lecturas vs Perfil vs Inventario)
+        vampire_kwh_monthly = energy_calculators.get_vampire_estimate(assets)
+
+        # 3. Proyección de Consumo (Single Source of Truth)
         latest_reading_kwh = readings[0].reading_value if readings else 0
         
-        # Lógica de Honestidad: Priorizar historial de factura (single source of truth)
         if profile and profile.average_kwh_captured and profile.average_kwh_captured > 0:
             projected_kwh = profile.average_kwh_captured
         elif readings:
@@ -108,57 +80,45 @@ class ResidentialService:
         else:
             projected_kwh = total_estimated_monthly_cost / kwh_price if kwh_price > 0 else 0
 
-        projected_bill_real = projected_kwh * kwh_price
-        
-        # Benchmarking de Eficiencia (Hogar Colombiano promedio: ~50 kWh por persona/mes)
-        occupants = profile.occupants if profile and profile.occupants > 0 else 1
-        kwh_per_person = projected_kwh / occupants
-        # Score Base (Duro y técnico): 100 es perfecto, bajamos según excedamos el benchmark de 35kWh (meta eficiente)
-        tech_efficiency_score = max(0, min(100, 100 - (max(0, kwh_per_person - 35) * 1.5)))
-        
-        # Carbon Footprint
-        co2_footprint = projected_kwh * 0.164
-        trees_equivalent = round(co2_footprint / 20) 
+        # 4. Métricas de Impacto
+        impact = energy_calculators.calculate_environmental_impact(projected_kwh)
+        tech_efficiency_score = energy_calculators.calculate_efficiency_score(
+            projected_kwh, 
+            profile.occupants if profile else 1
+        )
 
-        # 4. Contexto para Gemini (Unificando lecturas diarias con historial de factura)
-        # Priorizamos lecturas diarias si existen, si no, usamos el historial del recibo
-        history_for_ia = [r.reading_value for r in readings[:10]]
-        if not history_for_ia and profile and profile.history_kwh:
-            history_for_ia = profile.history_kwh
-
+        # 5. Auditoría de IA
         home_context = {
             "house_type": profile.house_type if profile else "Hogar",
             "occupants": profile.occupants if profile else 1,
             "stratum": stratum,
             "total_assets": len(assets),
             "high_impact_assets": high_impact_assets[:3],
-            "recent_history_kwh": history_for_ia,
+            "recent_history_kwh": [r.reading_value for r in readings] or (profile.history_kwh if profile else []),
             "monthly_budget": profile.target_monthly_bill if profile else 0,
             "estimated_monthly_cost": total_estimated_monthly_cost,
             "projected_kwh_month": projected_kwh
         }
-
-        # 5. Auditoría de IA
         ai_output = await gemini_service.get_residential_insights(home_context)
 
         return {
             "metrics": {
                 "kwh_price": kwh_price,
-                "efficiency_score": round(tech_efficiency_score),
+                "efficiency_score": tech_efficiency_score,
                 "vampire_cost_monthly": round(vampire_kwh_monthly * kwh_price),
-                "projected_bill": round(projected_bill_real),
+                "projected_bill": round(projected_kwh * kwh_price),
                 "projected_kwh": round(projected_kwh),
                 "total_estimated_monthly_cost": round(total_estimated_monthly_cost),
                 "potential_savings": f"$ {round(vampire_kwh_monthly * kwh_price * 0.8)}",
-                "co2_footprint": round(co2_footprint, 2),
-                "trees_equivalent": trees_equivalent
+                "co2_footprint": impact["co2_kg"],
+                "trees_equivalent": impact["trees"]
             },
             "analysis": {
                 "total_assets": len(assets),
                 "high_impact_assets": high_impact_assets[:5],
                 "top_waste_reason": ai_output.get("top_waste_reason", "Consumo Base Elevado")
             },
-            "ai_advice": ai_output.get("ai_advice", "Considera revisar los consumos en horas pico."),
+            "ai_advice": ai_output.get("ai_advice", "Excelente gestión."),
             "missions": ai_output.get("missions", [])
         }
 
