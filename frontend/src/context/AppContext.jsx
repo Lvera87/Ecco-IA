@@ -24,10 +24,14 @@ export const AppProvider = ({ children }) => {
 // This wrapper bridges the new specialized contexts with the legacy useApp hook
 // so we don't break the UI while we refactor components one by one.
 const AppContextWrapper = ({ children }) => {
-    const { userProfile, setUserProfile, missions, claimMission, addXP } = useUser();
+    const {
+        userProfile, setUserProfile, missions, claimMission, addXP,
+        gamificationStats, syncGamification, syncUserProfile, isLoadingGamification
+    } = useUser();
     const {
         appliances, consumptionHistory, dashboardInsights, isSyncing,
-        syncEnergyData, addAppliance, removeAppliance, toggleAppliance
+        syncEnergyData, addAppliance, removeAppliance, toggleAppliance,
+        addConsumptionReading
     } = useEnergy();
     const {
         theme, setTheme, notifications, addNotification,
@@ -38,10 +42,11 @@ const AppContextWrapper = ({ children }) => {
     const value = {
         // User Domain
         userProfile, setUserProfile, missions, claimMission, addXP,
+        gamificationStats, syncGamification, syncUserProfile, isLoadingGamification,
 
         // Energy Domain
         appliances, consumptionHistory, dashboardInsights, isSyncing,
-        addAppliance, removeAppliance, toggleAppliance,
+        addAppliance, removeAppliance, toggleAppliance, addConsumptionReading,
         syncDashboardData: syncEnergyData, // Alias for legacy support
 
         // UI Domain
