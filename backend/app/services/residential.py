@@ -86,34 +86,39 @@ class ResidentialService:
             if a.is_high_impact or cost > 20000:
                 high_impact_assets.append({"name": a.name, "cost": cost})
             
-            # Cálculo de vampiro (basado en auditoría del frontend)
+            # Cálculo de vampiro (Fisica de Sentido Común)
+            # Standby real de equipos modernos es < 1W (aprox 0.7 kWh/mes)
             if a.icon in ["tv", "monitor", "console", "desktop"]:
-                vampire_kwh_monthly += 2.5 # Promedio 2.5kWh standby (~3.5W)
+                vampire_kwh_monthly += 2.5 if a.is_high_impact else 0.7 
             elif a.icon == "fridge" and a.is_high_impact:
-                vampire_kwh_monthly += 8.0 # Equipo viejo consume más base
+                vampire_kwh_monthly += 8.0 
+            elif a.icon == "ac" and a.is_high_impact:
+                vampire_kwh_monthly += 1.5
 
         # 3. Análisis de Consumo real (Lecturas vs Perfil vs Inventario)
         latest_reading_kwh = readings[0].reading_value if readings else 0
         
-        # Lógica de honestidad (Senior Pattern): Priorizar datos reales/declarados sobre estimaciones técnicas
-        if readings:
-            # Si hay lecturas diarias, proyectamos a mes (30 días)
-            projected_kwh = latest_reading_kwh * 30
-        elif profile and profile.average_kwh_captured and profile.average_kwh_captured > 0:
-            # Si capturamos el dato de la factura vía OCR
+        # Lógica de Honestidad: Priorizar historial de factura (single source of truth)
+        if profile and profile.average_kwh_captured and profile.average_kwh_captured > 0:
             projected_kwh = profile.average_kwh_captured
+        elif readings:
+            projected_kwh = latest_reading_kwh * 30
         elif profile and profile.monthly_bill_avg and profile.monthly_bill_avg > 0:
-            # Si el usuario declaró un promedio en pesos, lo convertimos a kWh
             projected_kwh = profile.monthly_bill_avg / kwh_price if kwh_price > 0 else 0
         else:
-            # Último recurso: lo que suma su inventario de electrodomésticos
             projected_kwh = total_estimated_monthly_cost / kwh_price if kwh_price > 0 else 0
 
         projected_bill_real = projected_kwh * kwh_price
         
-        # Carbon Footprint (Fórmula estándar: 1 kWh ~ 0.164 kg CO2e)
+        # Benchmarking de Eficiencia (Hogar Colombiano promedio: ~50 kWh por persona/mes)
+        occupants = profile.occupants if profile and profile.occupants > 0 else 1
+        kwh_per_person = projected_kwh / occupants
+        # Score Base (Duro y técnico): 100 es perfecto, bajamos según excedamos el benchmark de 35kWh (meta eficiente)
+        tech_efficiency_score = max(0, min(100, 100 - (max(0, kwh_per_person - 35) * 1.5)))
+        
+        # Carbon Footprint
         co2_footprint = projected_kwh * 0.164
-        trees_equivalent = round(co2_footprint / 20) # 1 árbol compensa ~20kg CO2/año
+        trees_equivalent = round(co2_footprint / 20) 
 
         # 4. Contexto para Gemini (Unificando lecturas diarias con historial de factura)
         # Priorizamos lecturas diarias si existen, si no, usamos el historial del recibo
@@ -139,7 +144,7 @@ class ResidentialService:
         return {
             "metrics": {
                 "kwh_price": kwh_price,
-                "efficiency_score": ai_output.get("efficiency_score", 85),
+                "efficiency_score": round(tech_efficiency_score),
                 "vampire_cost_monthly": round(vampire_kwh_monthly * kwh_price),
                 "projected_bill": round(projected_bill_real),
                 "projected_kwh": round(projected_kwh),
