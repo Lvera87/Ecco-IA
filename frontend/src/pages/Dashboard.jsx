@@ -54,86 +54,47 @@ const Dashboard = () => {
   }, [isMounted]);
 
   const {
-    appliances, missions, claimMission, iconMap, goals,
+    userProfile, appliances, missions, claimMission, iconMap, goals,
     consumptionHistory, addConsumptionReading, setAppliances,
-    setConsumptionHistory, setUserProfile, updateGoals
+    setConsumptionHistory, setUserProfile, updateGoals,
+    dashboardInsights, gamificationStats, isSyncing, syncDashboardData
   } = useApp();
 
-  const [loading, setLoading] = useState(true);
-  const [residentialInsights, setResidentialInsights] = useState(null);
-  const [gamificationStats, setGamificationStats] = useState(null);
+
 
   React.useEffect(() => {
-    fetchDashboardData();
+    syncDashboardData();
   }, []);
-
-  const fetchDashboardData = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const [profile, assets, history, insights, gamification] = await Promise.all([
-        residentialApi.getProfile(),
-        residentialApi.getAssets(),
-        residentialApi.getConsumptionHistory(),
-        residentialApi.getDashboardInsights(),
-        gamificationApi.getStats().catch(() => null)
-      ]);
-
-      if (profile) {
-        setUserProfile(prev => ({ ...prev, type: 'residential', config: profile }));
-        updateGoals({ monthlyBudget: profile.target_monthly_bill });
-      }
-
-      if (assets) {
-        setAppliances(assets.map(a => ({
-          id: a.id,
-          name: a.name,
-          icon: a.icon,
-          // Consumo diario real en kWh
-          consumption: (a.power_watts * a.daily_hours) / 1000,
-          status: a.status,
-          category: a.category,
-          isHighImpact: a.is_high_impact,
-          monthlyCost: a.monthly_cost_estimate
-        })));
-      }
-
-      if (history) {
-        setConsumptionHistory(history.map(r => ({
-          id: r.id,
-          date: r.date,
-          value: r.reading_value,
-          type: r.reading_type
-        })));
-      }
-
-      if (gamification && gamification.active_missions) {
-        // Las misiones ahora vienen del backend
-        setGamificationStats(gamification);
-      }
-
-      setResidentialInsights(insights);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [setUserProfile, updateGoals, setAppliances, setConsumptionHistory]);
 
   const handleCompleteMission = async (missionId) => {
     try {
       await gamificationApi.completeMission(missionId);
-      // Recarga silenciosa para actualizar XP y misiones
-      fetchDashboardData(true);
+      // Recarga silenciosa
+      syncDashboardData(true);
     } catch (error) {
       console.error("Mission Error:", error);
     }
   };
 
   const {
-    latestReading, projectedKwh, projectedBill, vampireMoneyLost,
-    co2Footprint, treesEquivalent, kwhPrice, userStratum,
+    latestReading, projectedKwh: hookProjectedKwh, projectedBill: hookProjectedBill, vampireMoneyLost: hookVampireMoneyLost,
+    co2Footprint: hookCo2Footprint, treesEquivalent: hookTreesEquivalent, kwhPrice, userStratum,
     hasData, hasProfile, formatMoney, enrichedAppliances
   } = useEnergyMath();
+
+  // Prioritize Backend Insights for Metrics (High Honesty Logic)
+  const metrics = dashboardInsights?.metrics || {};
+  const displayProjectedBill = metrics.projected_bill ?? hookProjectedBill;
+  const displayVampireCost = metrics.vampire_cost_monthly ?? hookVampireMoneyLost;
+  const displayEfficiency = metrics.efficiency_score ?? (hasData ? 85 : 0);
+  const displayCo2 = metrics.co2_footprint ?? hookCo2Footprint;
+  const displayTrees = metrics.trees_equivalent ?? hookTreesEquivalent;
+  const displayProjectedKwh = metrics.projected_kwh ?? hookProjectedKwh;
+
+  const targetMonthlyBill = userProfile.config?.target_monthly_bill || goals?.monthlyBudget;
+  const currentActualAvg = userProfile.config?.monthly_bill_avg || metrics.total_estimated_monthly_cost;
+
+
 
   const handleSaveConsumption = async (data) => {
     try {
@@ -144,21 +105,29 @@ const Dashboard = () => {
       });
       setIsConsumptionModalOpen(false);
       // Refrescar todo el dashboard con los nuevos cálculos del backend
-      fetchDashboardData(true);
+      syncDashboardData(true);
     } catch (error) {
       console.error("Error saving reading:", error);
     }
   };
 
-  // Occupancy-based efficiency status
-  const occupants = 3; // Mock or from profile
-  const kwhPerPerson = projectedKwh / occupants;
-  const efficiencyStatus = kwhPerPerson < 45 ? 'excellent' : kwhPerPerson < 70 ? 'good' : 'bad';
+  // Occupancy-based efficiency status (Honest fallback)
+  const occupants = userProfile.config?.occupants || 3;
+  const kwhPerPerson = displayProjectedKwh / occupants;
+  const efficiencyStatus = !hasData ? 'unknown' : (kwhPerPerson < 45 ? 'excellent' : kwhPerPerson < 70 ? 'good' : 'bad');
 
-  // Progress toward goal
-  const monthlyBudgetKwh = goals?.monthlyBudget ? (goals.monthlyBudget / kwhPrice) : 150;
+
+  // Progress toward goal (Only show if target exists)
+  const hasTarget = targetMonthlyBill > 0;
+  const monthlyBudgetKwh = hasTarget ? (targetMonthlyBill / kwhPrice) : 150;
   const dailyGoal = monthlyBudgetKwh / 30;
-  const dailyProgress = latestReading > 0 ? Math.min(Math.round((latestReading / dailyGoal) * 100), 100) : 0;
+
+  // Real progress: how much of the "allowance" for today/month is consumed
+  // If no readings, progress is 0. If no target, progress is based on typical consumption.
+  const dailyProgress = (latestReading > 0 && hasTarget)
+    ? Math.min(Math.round((latestReading / dailyGoal) * 100), 100)
+    : 0;
+
 
   const activeAppliances = enrichedAppliances.filter(a => a.status).slice(0, 4);
 
@@ -168,7 +137,7 @@ const Dashboard = () => {
     value: r.value
   })).reverse() : [];
 
-  if (loading) {
+  if (isSyncing && !dashboardInsights) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8 text-center">
         <div className="size-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
@@ -179,9 +148,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-body relative overflow-x-hidden">
-      {showInsightAlert && residentialInsights && (
+      {showInsightAlert && dashboardInsights && (
         <ResidentialInsightAlert
-          insight={residentialInsights}
+          insight={dashboardInsights}
           onClose={() => setShowInsightAlert(false)}
         />
       )}
@@ -197,7 +166,7 @@ const Dashboard = () => {
               </div>
               <p className="text-sm text-slate-500">
                 {hasData
-                  ? <>Proyección: <span className="text-emerald-500 font-bold">{formatMoney(projectedBill)}</span> este mes</>
+                  ? <>Proyección: <span className="text-emerald-500 font-bold">{formatMoney(displayProjectedBill)}</span> este mes</>
                   : 'Registra tu consumo para ver proyecciones'
                 }
               </p>
@@ -205,7 +174,7 @@ const Dashboard = () => {
           </div>
 
           <div className="flex flex-col items-end gap-4">
-            <GamificationBadge stats={gamificationStats} loading={loading} />
+            <GamificationBadge stats={gamificationStats} loading={isSyncing && !gamificationStats} />
             <div className="flex items-center gap-4">
               <div className="hidden lg:flex flex-col items-end px-4 border-r border-slate-200 dark:border-slate-800">
                 <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Estrato {userStratum}</span>
@@ -242,9 +211,19 @@ const Dashboard = () => {
                 <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
                   {/* Left: House Info */}
                   <div className="flex items-center gap-4">
-                    <div className="size-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                      <Zap size={24} className="text-emerald-400" />
+                    <div className={`size-14 rounded-2xl flex items-center justify-center border transition-all duration-500 ${efficiencyStatus === 'excellent' ? 'bg-emerald-500/10 border-emerald-500/20' :
+                        efficiencyStatus === 'good' ? 'bg-blue-500/10 border-blue-500/20' :
+                          efficiencyStatus === 'bad' ? 'bg-red-500/10 border-red-500/20' :
+                            'bg-slate-500/10 border-slate-500/20'
+                      }`}>
+                      <Zap size={24} className={
+                        efficiencyStatus === 'excellent' ? 'text-emerald-400' :
+                          efficiencyStatus === 'good' ? 'text-blue-400' :
+                            efficiencyStatus === 'bad' ? 'text-red-400' :
+                              'text-slate-400'
+                      } />
                     </div>
+
                     <div>
                       <h3 className="text-lg font-display font-bold text-white">
                         {userProfile.config.house_type === 'apartment' ? '🏢 Apartamento' :
@@ -284,26 +263,27 @@ const Dashboard = () => {
                     <div className="text-right">
                       <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Meta Mensual</p>
                       <p className="text-lg font-display font-bold text-emerald-400">
-                        {userProfile.config.target_monthly_bill ? formatMoney(userProfile.config.target_monthly_bill) : 'Sin definir'}
+                        {targetMonthlyBill ? formatMoney(targetMonthlyBill) : 'Sin definir'}
                       </p>
                     </div>
                     <div className="w-px h-10 bg-slate-700"></div>
                     <div className="text-right">
                       <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Promedio Actual</p>
                       <p className="text-lg font-display font-bold text-amber-400">
-                        {userProfile.config.monthly_bill_avg ? formatMoney(userProfile.config.monthly_bill_avg) : 'Sin datos'}
+                        {currentActualAvg ? formatMoney(currentActualAvg) : 'Sin datos'}
                       </p>
                     </div>
+
                   </div>
                 </div>
 
                 {/* Tariff Info Bar */}
                 <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-between text-xs">
                   <span className="text-slate-500">
-                    Tarifa aplicada: <span className="text-emerald-400 font-bold">${residentialInsights?.metrics?.kwh_price || kwhPrice}/kWh</span>
+                    Tarifa aplicada: <span className="text-emerald-400 font-bold">${dashboardInsights?.metrics?.kwh_price || kwhPrice}/kWh</span>
                   </span>
                   <span className="text-slate-500">
-                    {residentialInsights?.analysis?.total_assets || 0} dispositivos registrados
+                    {dashboardInsights?.analysis?.total_assets || 0} dispositivos registrados
                   </span>
                   {userProfile.config.average_kwh_captured > 0 && (
                     <span className="text-slate-500">
@@ -318,29 +298,30 @@ const Dashboard = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard
                 title="Proyección Factura"
-                value={formatMoney(residentialInsights?.metrics?.projected_bill || projectedBill)}
+                value={formatMoney(displayProjectedBill)}
                 unit="/ mes"
                 icon={DollarSign}
                 color="emerald"
               />
               <StatCard
                 title="Costo Vampiro"
-                value={formatMoney(residentialInsights?.metrics?.vampire_cost_monthly || vampireMoneyLost)}
+                value={formatMoney(displayVampireCost)}
                 unit="/ mes"
                 icon={TrendingDown}
-                color={(residentialInsights?.metrics?.vampire_cost_monthly || vampireMoneyLost) > 25000 ? "red" : "amber"}
+                color={displayVampireCost > 25000 ? "red" : "amber"}
               />
               <StatCard
                 title="Eficiencia Eco"
-                value={residentialInsights?.metrics?.efficiency_score || 85}
+                value={displayEfficiency}
                 unit="%"
                 icon={Award}
-                color={(residentialInsights?.metrics?.efficiency_score || 85) > 80 ? "emerald" : "blue"}
+                color={displayEfficiency > 80 ? "emerald" : "blue"}
               />
               <StatCard
                 title="Meta de Ahorro"
-                value={`${dailyProgress}%`}
-                unit="ejecutado"
+                value={hasTarget ? `${dailyProgress}%` : "Sin Meta"}
+                unit={hasTarget ? "ejecutado" : "Click para definir"}
+
                 icon={Target}
                 color={dailyProgress > 90 ? "red" : "purple"}
               />
@@ -435,13 +416,13 @@ const Dashboard = () => {
           {/* Right Column: Gamification & Missions (1 col) */}
           <aside className="xl:col-span-1 space-y-6">
             <MissionWidget
-              missions={gamificationStats?.active_missions || []}
+              missions={dashboardInsights?.missions || []}
               onComplete={handleCompleteMission}
-              loading={loading}
+              loading={isSyncing}
             />
 
             {/* AI Insight Card */}
-            {residentialInsights?.ai_advice && (
+            {dashboardInsights?.ai_advice && (
               <Card className="p-6 bg-gradient-to-br from-emerald-500/10 to-blue-500/5 border-emerald-500/20">
                 <div className="flex justify-between items-start mb-4">
                   <div className="p-3 bg-emerald-500 text-white rounded-2xl shadow-lg">
@@ -453,7 +434,7 @@ const Dashboard = () => {
                   Consejo de IA
                 </h3>
                 <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
-                  {residentialInsights.ai_advice}
+                  {dashboardInsights.ai_advice}
                 </p>
               </Card>
             )}
@@ -466,43 +447,43 @@ const Dashboard = () => {
                 </div>
                 <h4 className="font-bold">Impacto Ambiental</h4>
               </div>
-              <p className="text-3xl font-display font-bold mb-1">{treesEquivalent}</p>
+              <p className="text-3xl font-display font-bold mb-1">{displayTrees}</p>
               <p className="text-xs text-emerald-100 opacity-80">árboles equivalentes este mes</p>
               <div className="mt-4 pt-4 border-t border-white/20 flex justify-between text-xs">
                 <span className="text-emerald-200">CO₂ Evitado</span>
-                <span className="font-bold">{co2Footprint} kg</span>
+                <span className="font-bold">{displayCo2} kg</span>
               </div>
             </div>
 
             {/* High Impact Assets */}
-            {residentialInsights?.analysis?.high_impact_assets?.length > 0 && (
+            {dashboardInsights?.analysis?.high_impact_assets?.length > 0 && (
               <Card className="p-5 bg-amber-500/5 border-amber-500/20">
                 <div className="flex items-center gap-2 mb-4">
                   <AlertCircle size={18} className="text-amber-500" />
                   <h4 className="font-bold text-sm text-slate-900 dark:text-white">Principales Consumidores</h4>
                 </div>
                 <div className="space-y-3">
-                  {residentialInsights.analysis.high_impact_assets.map((asset, i) => (
+                  {dashboardInsights.analysis.high_impact_assets.map((asset, i) => (
                     <div key={i} className="flex items-center justify-between text-sm">
                       <span className="text-slate-600 dark:text-slate-400">{asset.name}</span>
                       <span className="font-bold text-amber-600 dark:text-amber-400">{formatMoney(asset.cost)}/mes</span>
                     </div>
                   ))}
                 </div>
-                {residentialInsights.metrics?.potential_savings && (
+                {dashboardInsights.metrics?.potential_savings && (
                   <div className="mt-4 pt-3 border-t border-amber-500/20 text-center">
                     <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Ahorro Potencial</p>
-                    <p className="text-lg font-display font-bold text-emerald-500">{residentialInsights.metrics.potential_savings}</p>
+                    <p className="text-lg font-display font-bold text-emerald-500">{dashboardInsights.metrics.potential_savings}</p>
                   </div>
                 )}
               </Card>
             )}
 
             {/* Top Waste Reason */}
-            {residentialInsights?.analysis?.top_waste_reason && (
+            {dashboardInsights?.analysis?.top_waste_reason && (
               <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-xl">
                 <p className="text-[10px] uppercase tracking-widest text-red-400 font-bold mb-1">Principal Causa de Desperdicio</p>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{residentialInsights.analysis.top_waste_reason}</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{dashboardInsights.analysis.top_waste_reason}</p>
               </div>
             )}
           </aside>

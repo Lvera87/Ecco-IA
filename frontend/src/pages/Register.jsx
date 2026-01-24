@@ -46,7 +46,7 @@ const Register = () => {
         company_name: ''
     });
 
-    const isResidential = formData.user_type === 'residential';
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -62,7 +62,8 @@ const Register = () => {
         try {
             await authApi.register(formData);
             // Redirigir al dashboard correspondiente
-            navigate(isResidential ? '/dashboard' : '/industrial-dashboard');
+            navigate(formData.user_type === 'residential' ? '/dashboard' : '/industrial-dashboard');
+
         } catch (err) {
             setError(err.message || 'Error al crear la cuenta');
         } finally {
@@ -87,11 +88,11 @@ const Register = () => {
         <div className="min-h-screen bg-slate-950 font-body flex">
             {/* Left Panel - Branding */}
             <div className="hidden lg:flex lg:w-2/5 relative overflow-hidden">
-                <div className={`absolute inset-0 ${isResidential ? 'bg-gradient-to-br from-emerald-600 to-teal-900' : 'bg-gradient-to-br from-blue-600 to-indigo-900'}`} />
+                <div className={`absolute inset-0 ${formData.user_type === 'residential' ? 'bg-gradient-to-br from-emerald-600 to-teal-900' : 'bg-gradient-to-br from-blue-600 to-indigo-900'}`} />
                 <div className="absolute inset-0 opacity-10">
                     <div className="grid grid-cols-4 gap-8 p-8 transform -rotate-12 scale-150">
                         {[...Array(16)].map((_, i) => (
-                            isResidential
+                            formData.user_type === 'residential'
                                 ? <Home key={i} className="w-16 h-16 text-white" />
                                 : <Factory key={i} className="w-16 h-16 text-white" />
                         ))}
@@ -108,13 +109,15 @@ const Register = () => {
 
                     <div className="space-y-6">
                         <h1 className="font-display text-5xl font-bold text-white leading-tight">
-                            {isResidential ? 'Tu hogar, más inteligente' : 'Industria optimizada'}
+                            {formData.user_type === 'residential' ? 'Tu hogar, más inteligente' : 'Industria optimizada'}
                         </h1>
+
                         <p className="text-white/70 text-lg leading-relaxed max-w-md">
-                            {isResidential
+                            {formData.user_type === 'residential'
                                 ? 'Controla el consumo energético de tu hogar con inteligencia artificial. Ahorra hasta un 30% en tu factura mensual.'
                                 : 'Maximiza la eficiencia de tu planta industrial. Análisis predictivo y optimización en tiempo real.'}
                         </p>
+
                         <div className="flex gap-4">
                             <div className="flex items-center gap-2 text-white/60 text-sm">
                                 <CheckCircle size={16} className="text-emerald-400" />
@@ -141,9 +144,10 @@ const Register = () => {
                         {[1, 2, 3].map((s) => (
                             <div key={s} className="flex-1 h-1 rounded-full overflow-hidden bg-slate-800">
                                 <div
-                                    className={`h-full transition-all duration-500 ${step >= s ? (isResidential ? 'bg-emerald-500' : 'bg-blue-500') : ''}`}
+                                    className={`h-full transition-all duration-500 ${step >= s ? (formData.user_type === 'residential' ? 'bg-emerald-500' : 'bg-blue-500') : ''}`}
                                     style={{ width: step >= s ? '100%' : '0%' }}
                                 />
+
                             </div>
                         ))}
                     </div>
@@ -192,7 +196,8 @@ const Register = () => {
                                 <Button
                                     type="button"
                                     onClick={nextStep}
-                                    className={`w-full h-14 text-white font-bold ${isResidential ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+                                    className={`w-full h-14 text-white font-bold ${formData.user_type === 'residential' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+
                                 >
                                     Continuar <ArrowRight size={18} className="ml-2" />
                                 </Button>
@@ -244,7 +249,8 @@ const Register = () => {
                                 <Button
                                     type="button"
                                     onClick={nextStep}
-                                    className={`w-full h-14 text-white font-bold ${isResidential ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+                                    className={`w-full h-14 text-white font-bold ${formData.user_type === 'residential' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+
                                 >
                                     Continuar <ArrowRight size={18} className="ml-2" />
                                 </Button>
@@ -256,14 +262,16 @@ const Register = () => {
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                                 <div className="space-y-2">
                                     <h2 className="font-display text-3xl font-bold text-white">
-                                        {isResidential ? 'Tu hogar' : 'Tu empresa'}
+                                        {formData.user_type === 'residential' ? 'Tu hogar' : 'Tu empresa'}
                                     </h2>
+
                                     <p className="text-slate-400">
-                                        {isResidential ? 'Configuración básica de tu vivienda' : 'Datos de tu organización'}
+                                        {formData.user_type === 'residential' ? 'Configuración básica de tu vivienda' : 'Datos de tu organización'}
                                     </p>
                                 </div>
 
-                                {isResidential ? (
+                                {formData.user_type === 'residential' ? (
+
                                     <>
                                         <InputField
                                             icon={MapPin}
@@ -351,8 +359,9 @@ const Register = () => {
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className={`w-full h-14 text-white font-bold ${isResidential ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'} disabled:opacity-50`}
+                                    className={`w-full h-14 text-white font-bold ${formData.user_type === 'residential' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'} disabled:opacity-50`}
                                 >
+
                                     {loading ? (
                                         <>
                                             <Loader2 size={18} className="mr-2 animate-spin" /> Creando cuenta...
@@ -378,8 +387,9 @@ const Register = () => {
                         ¿Ya tienes cuenta?{' '}
                         <button
                             onClick={() => navigate('/login')}
-                            className={`font-bold hover:underline ${isResidential ? 'text-emerald-500' : 'text-blue-500'}`}
+                            className={`font-bold hover:underline ${formData.user_type === 'residential' ? 'text-emerald-500' : 'text-blue-500'}`}
                         >
+
                             Inicia sesión
                         </button>
                     </p>
