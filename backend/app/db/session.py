@@ -23,7 +23,8 @@ def get_async_engine():
             settings.database_url,
             echo=True,
             future=True,
-            pool_pre_ping=True
+            pool_pre_ping=True,
+            connect_args={"timeout": 15}
         )
     return _engine
 
