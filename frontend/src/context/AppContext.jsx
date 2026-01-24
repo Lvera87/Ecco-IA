@@ -4,6 +4,9 @@ import {
     Microwave, Fan, Monitor, Droplets, Flame,
     Zap, Clock, Leaf, Target, Crown
 } from 'lucide-react';
+import { residentialApi } from '../api/residential';
+import { gamificationApi } from '../api/gamification';
+
 
 // Initial appliances data
 const defaultAppliances = [
@@ -91,6 +94,10 @@ export const AppProvider = ({ children }) => {
         return saved || 'dark';
     });
 
+    const [dashboardInsights, setDashboardInsights] = useState(null);
+    const [gamificationStats, setGamificationStats] = useState(null);
+    const [isSyncing, setIsSyncing] = useState(false);
+
     // Persist to localStorage
     useEffect(() => {
         localStorage.setItem('eccoIA_userProfile', JSON.stringify(userProfile));
@@ -112,6 +119,70 @@ export const AppProvider = ({ children }) => {
         localStorage.setItem('eccoIA_theme', theme);
         document.documentElement.classList.toggle('dark', theme === 'dark');
     }, [theme]);
+
+    const syncDashboardData = async (silent = false) => {
+        if (!silent) setIsSyncing(true);
+        try {
+            // 1. Datos rápidos (Profile, Assets, Consumption, Gamification)
+            const [profile, assets, history, gamification] = await Promise.all([
+                residentialApi.getProfile(),
+                residentialApi.getAssets(),
+                residentialApi.getConsumptionHistory(),
+                gamificationApi.getStats().catch(() => null)
+            ]);
+
+            if (profile) {
+                setUserProfile(prev => ({ ...prev, type: 'residential', config: profile }));
+                setGoals(prev => ({ ...prev, monthlyBudget: profile.target_monthly_bill }));
+            }
+
+            if (assets) {
+                setAppliances(assets.map(a => ({
+                    id: a.id,
+                    name: a.name,
+                    icon: a.icon,
+                    consumption: (a.power_watts * a.daily_hours) / 1000,
+                    status: a.status,
+                    category: a.category,
+                    isHighImpact: a.is_high_impact,
+                    monthlyCost: a.monthly_cost_estimate
+                })));
+            }
+
+            if (history) {
+                setConsumptionHistory(history.map(r => ({
+                    id: r.id,
+                    date: r.date,
+                    value: r.reading_value,
+                    type: r.reading_type
+                })));
+            }
+
+            if (gamification && gamification.profile) {
+                setGamificationStats(gamification);
+                setUserProfile(prev => ({
+                    ...prev,
+                    level: gamification.profile.current_level,
+                    xp: gamification.profile.total_xp,
+                    xpToNext: gamification.next_level_xp
+                }));
+            }
+
+            // 2. Datos lentos (AI Insights)
+            residentialApi.getDashboardInsights().then(insights => {
+                setDashboardInsights(insights);
+            }).catch(err => {
+                console.error("AI Insights Error:", err);
+            });
+
+            return true;
+        } catch (error) {
+            console.error("Sync Error:", error);
+            return false;
+        } finally {
+            if (!silent) setIsSyncing(false);
+        }
+    };
 
     // Missions state
     const [missions, setMissions] = useState(() => {
@@ -170,20 +241,46 @@ export const AppProvider = ({ children }) => {
     };
 
     // Appliance actions
-    const addAppliance = (appliance) => {
-        const newAppliance = {
-            ...appliance,
-            id: Date.now(),
-            status: true,
-            efficiency: 'medium',
-            mode: 'normal',
-        };
-        setAppliances(prev => [...prev, newAppliance]);
-        addNotification({
-            type: 'system',
-            title: 'Dispositivo agregado',
-            message: `${appliance.name} se ha añadido correctamente.`,
-        });
+    const addAppliance = async (appliance) => {
+        try {
+            // Persistir en backend primero
+            const backendAppliance = {
+                name: appliance.name,
+                category: appliance.category,
+                icon: appliance.icon,
+                power_watts: Math.round(appliance.consumption * 1000), // Convertir kWh/h a Watts
+                daily_hours: appliance.usageHours || 4,
+                is_high_impact: appliance.consumption > 0.5
+            };
+
+            const savedAssets = await residentialApi.addAssets([backendAppliance]);
+            const newApp = savedAssets[0];
+
+            setAppliances(prev => [...prev, {
+                id: newApp.id,
+                name: newApp.name,
+                icon: newApp.icon,
+                consumption: (newApp.power_watts * newApp.daily_hours) / 1000,
+                status: newApp.status,
+                category: newApp.category,
+                isHighImpact: newApp.is_high_impact,
+                monthlyCost: newApp.monthly_cost_estimate
+            }]);
+
+            addNotification({
+                type: 'system',
+                title: 'Dispositivo agregado',
+                message: `${appliance.name} se ha añadido correctamente.`,
+            });
+
+            // Forzar actualización de insights si estamos en el dashboard
+            syncDashboardData(true);
+            return true;
+        } catch (error) {
+            console.error("Error adding appliance:", error);
+            addNotification({ type: 'error', title: 'Error', message: 'No se pudo guardar el dispositivo.' });
+            return false;
+        }
     };
 
     const updateAppliance = (id, updates) => {
@@ -192,22 +289,42 @@ export const AppProvider = ({ children }) => {
         ));
     };
 
-    const removeAppliance = (id) => {
-        const appliance = appliances.find(a => a.id === id);
-        setAppliances(prev => prev.filter(app => app.id !== id));
-        if (appliance) {
-            addNotification({
-                type: 'system',
-                title: 'Dispositivo eliminado',
-                message: `${appliance.name} se ha eliminado.`,
-            });
+    const removeAppliance = async (id) => {
+        try {
+            await residentialApi.deleteAsset(id);
+            const appliance = appliances.find(a => a.id === id);
+            setAppliances(prev => prev.filter(app => app.id !== id));
+            if (appliance) {
+                addNotification({
+                    type: 'system',
+                    title: 'Dispositivo eliminado',
+                    message: `${appliance.name} se ha eliminado.`,
+                });
+                syncDashboardData(true);
+            }
+            return true;
+        } catch (error) {
+            console.error("Error removing appliance:", error);
+            addNotification({ type: 'error', title: 'Error', message: 'No se pudo eliminar el dispositivo.' });
+            return false;
         }
     };
 
-    const toggleAppliance = (id) => {
-        setAppliances(prev => prev.map(app =>
-            app.id === id ? { ...app, status: !app.status, efficiency: !app.status ? 'medium' : 'off' } : app
-        ));
+    const toggleAppliance = async (id) => {
+        try {
+            const appliance = appliances.find(a => a.id === id);
+            if (!appliance) return;
+
+            const newStatus = !appliance.status;
+            await residentialApi.updateAsset(id, { status: newStatus });
+
+            setAppliances(prev => prev.map(app =>
+                app.id === id ? { ...app, status: newStatus, efficiency: newStatus ? 'medium' : 'off' } : app
+            ));
+            syncDashboardData(true);
+        } catch (error) {
+            console.error("Error toggling appliance:", error);
+        }
     };
 
     // Notification actions
@@ -307,6 +424,12 @@ export const AppProvider = ({ children }) => {
         // Consumption
         consumptionHistory,
         addConsumptionReading,
+
+        // Dashboard Sync
+        dashboardInsights,
+        gamificationStats,
+        isSyncing,
+        syncDashboardData
     };
 
     return (

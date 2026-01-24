@@ -41,16 +41,16 @@ const AddApplianceModal = ({ isOpen, onClose }) => {
         ? applianceTypes.filter(t => t.category === selectedCategory)
         : applianceTypes;
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (selectedType) {
-            addAppliance({
+            const success = await addAppliance({
                 name: customName || selectedType.name,
                 icon: selectedType.icon,
                 consumption: selectedType.consumption,
                 usageHours,
                 category: selectedType.category,
             });
-            handleClose();
+            if (success) handleClose();
         }
     };
 

@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import {
   Wind, Tv, Speaker, Lamp, Zap, Plus, Search,
   Filter, Trash2, Edit3, CheckCircle2, AlertTriangle,
-  Flame, Cloud, DollarSign, TrendingDown, Info, ShieldAlert
+  Flame, Cloud, DollarSign, TrendingDown, Info, ShieldAlert,
+  Loader2
 } from 'lucide-react';
+import { residentialApi } from '../api/residential';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import StatCard from '../components/ui/StatCard';
@@ -21,9 +23,14 @@ const Appliances = () => {
   const [applianceToDelete, setApplianceToDelete] = useState(null);
 
   const {
-    iconMap, removeAppliance, toggleApplianceStatus,
-    addNotification
+    iconMap, removeAppliance, toggleAppliance,
+    addNotification, syncDashboardData, isSyncing
   } = useApp();
+
+
+  React.useEffect(() => {
+    syncDashboardData();
+  }, []);
 
   const {
     enrichedAppliances, totalNominalKwh, totalMonthlyCost,
@@ -39,8 +46,8 @@ const Appliances = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const handleDelete = (id) => {
-    removeAppliance(id);
+  const handleDelete = async (id) => {
+    await removeAppliance(id);
     setApplianceToDelete(null);
     addNotification({
       type: 'info',
@@ -50,7 +57,7 @@ const Appliances = () => {
   };
 
   const handleToggle = (id) => {
-    toggleApplianceStatus(id);
+    toggleAppliance(id);
   };
 
   return (
@@ -137,8 +144,8 @@ const Appliances = () => {
                   key={opt.id}
                   onClick={() => setFilter(opt.id)}
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === opt.id
-                      ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}
                 >
                   {opt.label}
@@ -191,8 +198,8 @@ const Appliances = () => {
                         </td>
                         <td className="px-6 py-5">
                           <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${app.expertStatus === 'Excellent' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' :
-                              app.expertStatus === 'Warning' ? 'bg-amber-100 text-amber-600 border-amber-200' :
-                                'bg-red-100 text-red-600 border-red-200'
+                            app.expertStatus === 'Warning' ? 'bg-amber-100 text-amber-600 border-amber-200' :
+                              'bg-red-100 text-red-600 border-red-200'
                             }`}>
                             {app.expertStatus === 'Excellent' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
                             {app.expertStatus === 'Excellent' ? 'Óptimo' : 'Crítico'}

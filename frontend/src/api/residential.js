@@ -37,6 +37,11 @@ export const residentialApi = {
         return response.data;
     },
 
+    updateAsset: async (assetId, updates) => {
+        const response = await client.patch(`/residential/assets/${assetId}`, updates);
+        return response.data;
+    },
+
     /**
      * Consumption
      */

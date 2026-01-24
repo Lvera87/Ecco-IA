@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.core.config import get_settings
 from app.db.session import get_async_session
-from app.models.user import User
+from app.models import User
 from app.core.security import decode_token, get_password_hash
 
 settings = get_settings()
@@ -32,7 +32,17 @@ async def get_current_user(
     
     # DEV MODE: Bypass para desarrollo local
     if settings.dev_mode and not token:
-        result = await db.execute(select(User).where(User.username == "developer"))
+        from sqlalchemy.orm import selectinload
+        query = (
+            select(User)
+            .where(User.username == "developer")
+            .options(
+                selectinload(User.gamification_profile),
+                selectinload(User.industrial_settings),
+                selectinload(User.residential_profile)
+            )
+        )
+        result = await db.execute(query)
         dev_user = result.scalar_one_or_none()
         
         if not dev_user:
@@ -46,6 +56,7 @@ async def get_current_user(
             await db.commit()
             await db.refresh(dev_user)
         return dev_user
+
     
     # PRODUCTION MODE: Validación JWT estricta
     if not token:
