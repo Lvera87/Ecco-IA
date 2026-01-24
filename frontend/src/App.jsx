@@ -10,10 +10,10 @@ import IndustrialConfig from './pages/IndustrialConfig.jsx';
 import GlobalConsumption from './pages/GlobalConsumption.jsx';
 import ProfileSelection from './pages/ProfileSelection.jsx';
 import ResidentialConfig from './pages/ResidentialConfig.jsx';
-import FinancialImpact from './pages/FinancialImpact.jsx';
 import ResultsDashboard from './pages/ResultsDashboard.jsx';
 import EnergyAnalysis from './pages/EnergyAnalysis.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import EnergyManagement from './pages/EnergyManagement.jsx';
 import Missions from './pages/Missions.jsx';
 import CarbonFootprint from './pages/CarbonFootprint.jsx';
 import Onboarding from './pages/Onboarding.jsx';
@@ -35,9 +35,10 @@ function App() {
             <Route path="/profile-selection" element={<ProfileSelection />} />
             <Route path="/residential-config" element={<ResidentialConfig />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/appliances" element={<Appliances />} />
+            <Route path="/energy-management" element={<EnergyManagement />} />
+            <Route path="/appliances" element={<EnergyManagement />} />
             <Route path="/missions" element={<Missions />} />
-            <Route path="/financial-impact" element={<FinancialImpact />} />
+            <Route path="/financial-impact" element={<EnergyManagement />} />
             <Route path="/energy-analysis" element={<EnergyAnalysis />} />
             <Route path="/carbon-footprint" element={<CarbonFootprint />} />
             <Route path="/industrial-dashboard" element={<IndustrialDashboard />} />
