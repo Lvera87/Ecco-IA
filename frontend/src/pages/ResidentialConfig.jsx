@@ -215,7 +215,7 @@ const ResidentialConfig = () => {
             });
 
             if (assetsToBatch.length > 0) {
-                await residentialApi.createAssetBatch(assetsToBatch);
+                await residentialApi.addAssets(assetsToBatch);
             }
 
             // Update Global Context (keeping local state for immediate UI feedback)
