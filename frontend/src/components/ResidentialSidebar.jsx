@@ -20,8 +20,7 @@ const ResidentialSidebar = () => {
 
   const navItems = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Panel de Control" },
-    { to: "/financial-impact", icon: Receipt, label: "Facturación" },
-    { to: "/appliances", icon: Refrigerator, label: "Electrodomésticos" },
+    { to: "/energy-management", icon: Receipt, label: "Facturación e Inventario" },
     { to: "/residential-assistant", icon: MessageSquareText, label: "Asistente Ecco" },
     { to: "/missions", icon: Trophy, label: "Misiones" },
     { to: "/energy-analysis", icon: LineChart, label: "Análisis" },
