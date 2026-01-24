@@ -1,8 +1,11 @@
 import { useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import { useUser } from '../context/UserContext';
+import { useEnergy } from '../context/EnergyContext';
 
 export const useEnergyMath = () => {
-    const { userProfile, appliances, consumptionHistory } = useApp();
+    // Micro-Contexts Architecture
+    const { userProfile } = useUser();
+    const { appliances, consumptionHistory, dashboardInsights } = useEnergy();
 
     const config = userProfile?.config || {};
     const details = config.applianceDetails || {};
@@ -28,6 +31,9 @@ export const useEnergyMath = () => {
 
     // Core Calculations
     const calculations = useMemo(() => {
+        // Backend-First: Si el backend ya calculó las métricas, preferirlas
+        const backendMetrics = dashboardInsights?.metrics || {};
+
         // Prioridad de consumo base: 1. Capturado (Factura) 2. Promedio declarado 3. Default
         const baseMonthlyKwh = isIndustrial
             ? (parseFloat(config.monthly_consumption_avg) || 0)
@@ -38,8 +44,9 @@ export const useEnergyMath = () => {
             ? consumptionHistory[0].value
             : 0;
 
-        const projectedKwh = latestReading > 0 ? latestReading * 30 : baseMonthlyKwh;
-        const projectedBill = projectedKwh * kwhPrice;
+        // Use backend values when available, fallback to local calculation
+        const projectedKwh = backendMetrics.projected_kwh || (latestReading > 0 ? latestReading * 30 : baseMonthlyKwh);
+        const projectedBill = backendMetrics.projected_bill || (projectedKwh * kwhPrice);
 
         // Vampire & Inefficiency costs (Fisica de Sentido Común)
         let vampireKwhMonthly = 0;
@@ -56,11 +63,12 @@ export const useEnergyMath = () => {
             vampireKwhMonthly = projectedKwh * 0.15;
         }
 
-        const vampireMoneyLost = vampireKwhMonthly * kwhPrice;
+        // Prefer backend values for vampire cost when available
+        const vampireMoneyLost = backendMetrics.vampire_cost_monthly || (vampireKwhMonthly * kwhPrice);
 
-        // Carbon Footprint
-        const co2Footprint = projectedKwh * CO2_FACTOR;
-        const treesEquivalent = Math.round(co2Footprint / 20);
+        // Carbon Footprint - prefer backend
+        const co2Footprint = backendMetrics.co2_footprint || (projectedKwh * CO2_FACTOR);
+        const treesEquivalent = backendMetrics.trees_equivalent || Math.round(co2Footprint / 20);
 
         // Specific Metrics
         const floorArea = parseFloat(config.area_sqm) || 1;
@@ -68,9 +76,11 @@ export const useEnergyMath = () => {
         const occupants = parseInt(config.occupants) || 1;
         const kwhPerPerson = projectedKwh / occupants;
 
-        const efficiencyScore = isIndustrial
+        // Efficiency Score - prefer backend (uses same algorithm from energy_logic.py)
+        const localEfficiencyScore = isIndustrial
             ? Math.max(0, Math.min(100, 100 - ((energyIntensity / 50) * 20))).toFixed(1)
             : Math.max(0, Math.min(100, 100 - (Math.max(0, kwhPerPerson - 35) * 1.5))).toFixed(0);
+        const efficiencyScore = backendMetrics.efficiency_score || localEfficiencyScore;
 
         // Load Estimates (Percent of total) based on Industrial Zones
         const loadDist = [];
@@ -103,7 +113,7 @@ export const useEnergyMath = () => {
             hasData: consumptionHistory.length > 0 || (isIndustrial && baseMonthlyKwh > 0),
             hasProfile: isIndustrial ? !!config.sector : !!config.stratum
         };
-    }, [consumptionHistory, kwhPrice, userStratum, details, config, isIndustrial]);
+    }, [consumptionHistory, kwhPrice, userStratum, details, config, isIndustrial, dashboardInsights]);
 
     // Enriched appliances with financial data
     const enrichedAppliances = useMemo(() => {

@@ -3,15 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.residential import ResidentialProfile, ResidentialAsset, ConsumptionReading
 from app.services.gemini_service import gemini_service
-
-class ResidentialService:
-    """
-    Servicio Residencial de Ecco-IA.
-    Aplica lógica de sentido común para el hogar: proyecciones de factura, 
-    análisis de consumo por persona y auditoría de IA.
-    """
-
 from app.core.energy_logic import energy_calculators
+
 
 class ResidentialService:
     """

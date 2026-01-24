@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  Zap, TrendingDown, Leaf, Trophy, Calendar, ChevronRight,
+  Zap, TrendingDown, Leaf, ChevronRight,
   Target, Award, DollarSign, Plus, Lightbulb, Wind, AlertCircle, Activity
 } from 'lucide-react';
 import {
@@ -16,10 +16,11 @@ import ConsumptionModal from '../components/ui/ConsumptionModal';
 import ResidentialInsightAlert from '../components/ui/ResidentialInsightAlert';
 import GamificationBadge from '../components/ui/GamificationBadge';
 import MissionWidget from '../components/ui/MissionWidget';
-import { useApp } from '../context/AppContext';
+// Micro-Contexts Architecture: Import specialized hooks instead of monolithic useApp
+import { useUser } from '../context/UserContext';
+import { useEnergy, iconMap } from '../context/EnergyContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
 import { residentialApi } from '../api/residential';
-import { gamificationApi } from '../api/gamification';
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -53,24 +54,29 @@ const Dashboard = () => {
     }
   }, [isMounted]);
 
-  const {
-    userProfile, appliances, missions, claimMission, iconMap, goals,
-    consumptionHistory, addConsumptionReading, setAppliances,
-    setConsumptionHistory, setUserProfile, updateGoals,
-    dashboardInsights, gamificationStats, isSyncing, syncDashboardData
-  } = useApp();
+  // Micro-Contexts: User domain (profile, gamification)
+  const { userProfile, missions, claimMission, syncGamification } = useUser();
 
+  // Micro-Contexts: Energy domain (appliances, consumption, insights)
+  const {
+    appliances, consumptionHistory, dashboardInsights,
+    isSyncing, syncEnergyData: syncDashboardData, addConsumptionReading
+  } = useEnergy();
 
 
   React.useEffect(() => {
+    // Sync both energy data and gamification on mount
     syncDashboardData();
+    syncGamification();
   }, []);
 
   const handleCompleteMission = async (missionId) => {
     try {
-      await gamificationApi.completeMission(missionId);
-      // Recarga silenciosa
-      syncDashboardData(true);
+      const success = await claimMission(missionId);
+      if (success) {
+        // Recarga silenciosa de dashboard data
+        syncDashboardData(true);
+      }
     } catch (error) {
       console.error("Mission Error:", error);
     }
@@ -91,7 +97,7 @@ const Dashboard = () => {
   const displayTrees = metrics.trees_equivalent ?? hookTreesEquivalent;
   const displayProjectedKwh = metrics.projected_kwh ?? hookProjectedKwh;
 
-  const targetMonthlyBill = userProfile.config?.target_monthly_bill || goals?.monthlyBudget;
+  const targetMonthlyBill = userProfile.config?.target_monthly_bill || 0;
   const currentActualAvg = userProfile.config?.monthly_bill_avg || metrics.total_estimated_monthly_cost;
 
 
