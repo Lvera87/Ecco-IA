@@ -88,27 +88,46 @@ class ResidentialService:
             
             # Cálculo de vampiro (basado en auditoría del frontend)
             if a.icon in ["tv", "monitor", "console", "desktop"]:
-                vampire_kwh_monthly += 5.0 # Promedio 5kWh standby
+                vampire_kwh_monthly += 2.5 # Promedio 2.5kWh standby (~3.5W)
             elif a.icon == "fridge" and a.is_high_impact:
-                vampire_kwh_monthly += 15.0 # Equipo viejo consume más base
+                vampire_kwh_monthly += 8.0 # Equipo viejo consume más base
 
-        # 3. Análisis de Consumo real (Lecturas)
+        # 3. Análisis de Consumo real (Lecturas vs Perfil vs Inventario)
         latest_reading_kwh = readings[0].reading_value if readings else 0
-        projected_kwh = latest_reading_kwh * 30 if readings else (total_estimated_monthly_cost / kwh_price if kwh_price > 0 else 0)
+        
+        # Lógica de honestidad (Senior Pattern): Priorizar datos reales/declarados sobre estimaciones técnicas
+        if readings:
+            # Si hay lecturas diarias, proyectamos a mes (30 días)
+            projected_kwh = latest_reading_kwh * 30
+        elif profile and profile.average_kwh_captured and profile.average_kwh_captured > 0:
+            # Si capturamos el dato de la factura vía OCR
+            projected_kwh = profile.average_kwh_captured
+        elif profile and profile.monthly_bill_avg and profile.monthly_bill_avg > 0:
+            # Si el usuario declaró un promedio en pesos, lo convertimos a kWh
+            projected_kwh = profile.monthly_bill_avg / kwh_price if kwh_price > 0 else 0
+        else:
+            # Último recurso: lo que suma su inventario de electrodomésticos
+            projected_kwh = total_estimated_monthly_cost / kwh_price if kwh_price > 0 else 0
+
         projected_bill_real = projected_kwh * kwh_price
         
         # Carbon Footprint (Fórmula estándar: 1 kWh ~ 0.164 kg CO2e)
         co2_footprint = projected_kwh * 0.164
         trees_equivalent = round(co2_footprint / 20) # 1 árbol compensa ~20kg CO2/año
 
-        # 4. Contexto para Gemini
+        # 4. Contexto para Gemini (Unificando lecturas diarias con historial de factura)
+        # Priorizamos lecturas diarias si existen, si no, usamos el historial del recibo
+        history_for_ia = [r.reading_value for r in readings[:10]]
+        if not history_for_ia and profile and profile.history_kwh:
+            history_for_ia = profile.history_kwh
+
         home_context = {
             "house_type": profile.house_type if profile else "Hogar",
             "occupants": profile.occupants if profile else 1,
             "stratum": stratum,
             "total_assets": len(assets),
             "high_impact_assets": high_impact_assets[:3],
-            "recent_readings": [r.reading_value for r in readings[:5]],
+            "recent_history_kwh": history_for_ia,
             "monthly_budget": profile.target_monthly_bill if profile else 0,
             "estimated_monthly_cost": total_estimated_monthly_cost,
             "projected_kwh_month": projected_kwh
