@@ -64,38 +64,23 @@ async def list_assets(
     
     return assets
 
-@router.post("/assets", response_model=ResidentialAsset)
-async def create_asset(
-    asset_in: ResidentialAssetCreate,
-    current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_async_session)
-):
-    """Registra un nuevo electrodoméstico y calcula su impacto financiero"""
-    asset_data = asset_in.model_dump()
-    # Inyectar cálculo de costo inicial
-    asset_data["monthly_cost_estimate"] = residential_service.calculate_appliance_cost(
-        asset_data.get("power_watts", 0), 
-        asset_data.get("daily_hours", 0)
-    )
-    asset = AssetModel(**asset_data, user_id=current_user.id)
-    db.add(asset)
-    await db.commit()
-    await db.refresh(asset)
-    return asset
-
-@router.post("/assets/batch", response_model=List[ResidentialAsset])
-async def create_assets_batch(
+@router.post("/assets", response_model=List[ResidentialAsset])
+async def add_assets(
     assets_in: List[ResidentialAssetCreate],
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_async_session)
 ):
-    """Registra múltiples electrodomésticos (Onboarding)"""
+    """
+    Registra uno o varios electrodomésticos. 
+    Unifica la creación individual y masiva (Batch) en una sola lógica clara.
+    """
     new_assets = []
     for asset_in in assets_in:
         asset_data = asset_in.model_dump()
         asset_data["monthly_cost_estimate"] = residential_service.calculate_appliance_cost(
             asset_data.get("power_watts", 0), 
-            asset_data.get("daily_hours", 0)
+            asset_data.get("daily_hours", 0),
+            residential_service.get_kwh_price(current_user.residential_profile.stratum if current_user.residential_profile else 3)
         )
         asset = AssetModel(**asset_data, user_id=current_user.id)
         db.add(asset)
