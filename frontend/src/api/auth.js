@@ -22,9 +22,22 @@ export const authApi = {
 
     /**
      * Inicia sesión
+     * CORRECCIÓN: Convierte JSON a x-www-form-urlencoded para evitar error 422
      */
-    async login(username, password) {
-        const response = await client.post('/auth/login', { username, password });
+    async login({ username, password }) { // Recibimos un objeto para coincidir con Register.jsx
+
+        // 1. Crear params de formulario (Requisito de FastAPI)
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        // 2. Enviar con el header correcto
+        const response = await client.post('/auth/login', formData, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
         if (response.data) {
             this.saveTokens(response.data);
         }
@@ -58,11 +71,9 @@ export const authApi = {
      * Guarda tokens en localStorage
      */
     saveTokens({ access_token, refresh_token, user_type }) {
-        localStorage.setItem(TOKEN_KEY, access_token);
-        localStorage.setItem(REFRESH_KEY, refresh_token);
-        if (user_type) {
-            localStorage.setItem(USER_TYPE_KEY, user_type);
-        }
+        if (access_token) localStorage.setItem(TOKEN_KEY, access_token);
+        if (refresh_token) localStorage.setItem(REFRESH_KEY, refresh_token);
+        if (user_type) localStorage.setItem(USER_TYPE_KEY, user_type);
     },
 
     /**
