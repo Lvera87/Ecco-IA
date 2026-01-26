@@ -19,7 +19,7 @@ const Login = () => {
         setError('');
 
         try {
-            const data = await authApi.login(identifier, password);
+            const data = await authApi.login({ username: identifier, password });
 
             // Redirección inteligente según el tipo de usuario
             if (data.user_type === 'industrial') {

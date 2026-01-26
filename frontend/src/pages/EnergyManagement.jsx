@@ -342,42 +342,78 @@ const EnergyManagement = () => {
                                     <thead>
                                         <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
                                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Equipo</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">En Uso</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Inversión Mensual</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cantidad</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Estado</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Consumo Total</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Costo Total</th>
                                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredAppliances.map((app) => {
-                                            const AppIcon = iconMap?.[app.icon] || Wind;
+                                        {/* Agrupación Visual */}
+                                        {Object.values(filteredAppliances.reduce((acc, app) => {
+                                            // Clave única de agrupación: Nombre + Consumo + Categoría
+                                            const key = `${app.name}-${app.consumption}-${app.category}`;
+                                            if (!acc[key]) {
+                                                acc[key] = {
+                                                    ...app,
+                                                    quantity: 0,
+                                                    ids: [],
+                                                    totalMonthlyCost: 0,
+                                                    totalConsumption: 0
+                                                };
+                                            }
+                                            acc[key].quantity += 1;
+                                            acc[key].ids.push(app.id);
+                                            acc[key].totalMonthlyCost += app.monthlyCost;
+                                            // Estimado de consumo mensual individual para sumar
+                                            acc[key].totalConsumption += (app.monthlyCost / 850);
+                                            return acc;
+                                        }, {})).map((group) => {
+                                            const AppIcon = iconMap?.[group.icon] || Wind;
                                             return (
-                                                <tr key={app.id} className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                <tr key={group.ids[0]} className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                                     <td className="px-6 py-5">
                                                         <div className="flex items-center gap-4">
-                                                            <div className={`size-10 rounded-xl flex items-center justify-center ${app.warning ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                                                            <div className={`size-10 rounded-xl flex items-center justify-center ${group.warning ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
                                                                 <AppIcon size={20} />
                                                             </div>
                                                             <div>
-                                                                <p className="font-bold text-slate-800 dark:text-white">{app.name}</p>
-                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{app.consumption} kWh/h</p>
+                                                                <p className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                                                    {group.name}
+                                                                </p>
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{group.consumption.toFixed(2)} kWh/día (u)</p>
                                                             </div>
                                                         </div>
+                                                    </td>
+                                                    <td className="px-6 py-5 text-center">
+                                                        <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs px-3 py-1 rounded-full">
+                                                            x{group.quantity}
+                                                        </span>
                                                     </td>
                                                     <td className="px-6 py-5">
                                                         <div className="flex justify-center">
                                                             <button
-                                                                onClick={() => handleToggle(app.id)}
-                                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${app.status ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+                                                                onClick={() => group.ids.forEach(id => handleToggle(id))}
+                                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${group.status ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+                                                                title="Alternar todos"
                                                             >
-                                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${app.status ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${group.status ? 'translate-x-6' : 'translate-x-1'}`} />
                                                             </button>
                                                         </div>
                                                     </td>
+                                                    <td className="px-6 py-5 text-right font-bold text-slate-600 dark:text-slate-300">
+                                                        {group.totalConsumption.toFixed(1)} kWh/mes
+                                                    </td>
                                                     <td className="px-6 py-5 text-right font-black text-slate-800 dark:text-white">
-                                                        {formatMoney(app.monthlyCost)}
+                                                        {formatMoney(group.totalMonthlyCost)}
                                                     </td>
                                                     <td className="px-6 py-5 text-right">
-                                                        <button onClick={() => setApplianceToDelete(app)} className="p-2 hover:bg-red-50 text-red-300 hover:text-red-500 rounded-lg transition-colors">
+                                                        <button
+                                                            onClick={() => setApplianceToDelete({ id: group.ids[0], name: group.name, isGroup: group.quantity > 1 })}
+                                                            className="p-2 hover:bg-red-50 text-red-300 hover:text-red-500 rounded-lg transition-colors"
+                                                            title="Eliminar uno"
+                                                        >
                                                             <Trash2 size={16} />
                                                         </button>
                                                     </td>

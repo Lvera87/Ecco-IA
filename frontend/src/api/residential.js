@@ -42,6 +42,11 @@ export const residentialApi = {
         return response.data;
     },
 
+    resetAssets: async () => {
+        const response = await client.delete('/residential/assets/reset');
+        return response.data;
+    },
+
     /**
      * Consumption
      */

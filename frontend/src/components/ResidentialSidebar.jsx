@@ -13,10 +13,12 @@ import {
   MessageSquareText
 } from 'lucide-react';
 import ConfirmationModal from './ui/ConfirmationModal';
+import { useUser } from '../context/UserContext';
 
 const ResidentialSidebar = () => {
   const navigate = useNavigate();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const { logout } = useUser(); // Hook para logout limpio
 
   const navItems = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Panel de Control" },
@@ -28,9 +30,7 @@ const ResidentialSidebar = () => {
   ];
 
   const handleLogout = () => {
-    // Aquí iría la lógica de logout (limpiar storage, context, etc.)
-    localStorage.removeItem('userProfile');
-    localStorage.removeItem('appliances');
+    logout(); // Llama a la limpieza centralizada
     navigate('/');
     setIsLogoutModalOpen(false);
   };
