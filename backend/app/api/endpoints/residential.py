@@ -101,6 +101,20 @@ async def add_assets(
     for asset in new_assets: await db.refresh(asset)
     return new_assets
 
+    await db.commit()
+    for asset in new_assets: await db.refresh(asset)
+    return new_assets
+
+@router.delete("/assets/reset", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_all_assets(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_async_session)
+):
+    """Elimina TODOS los electrodomésticos del usuario para reiniciar la calibración"""
+    await db.execute(delete(AssetModel).where(AssetModel.user_id == current_user.id))
+    await db.commit()
+    return None
+
 @router.delete("/assets/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_asset(
     asset_id: int,
@@ -142,6 +156,8 @@ async def update_asset(
     await db.commit()
     await db.refresh(asset)
     return asset
+
+
 
 # --- CONSUMPTION ENDPOINTS ---
 
