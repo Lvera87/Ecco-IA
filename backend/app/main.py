@@ -70,7 +70,7 @@ def create_app() -> FastAPI:
                 logger.info("Master missions seeded successfully")
                 break # Solo necesitamos una sesión
             except Exception as e:
-                logger.error(f"Failed to seed missions on startup: {e}")
+                logger.warning(f"Could not seed missions on startup (table might not exist yet): {e}")
 
     logger.info("Application started in %s mode", settings.environment)
     return application
