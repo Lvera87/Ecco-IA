@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import get_settings
 from typing import AsyncGenerator
+import logging
 
 settings = get_settings()
 
@@ -11,7 +12,6 @@ settings = get_settings()
 # import-time (useful for lightweight test environments).
 _engine = None
 
-import logging
 logger = logging.getLogger("app.db")
 
 def get_async_engine():
@@ -31,7 +31,6 @@ def get_async_engine():
 # Export for scripts
 async_engine = get_async_engine()
 
-
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Yield a database session in async context."""
     logger.info("Solicitando sesión asíncrona...")
@@ -45,3 +44,8 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
         logger.info("Sesión abierta.")
         yield session
         logger.info("Sesión finalizada.")
+
+# --- AQUÍ ESTÁ EL ARREGLO ---
+# Creamos un alias: "get_db" es lo mismo que "get_async_session".
+# Esto satisface a tu archivo prediction.py sin romper lo demás.
+get_db = get_async_session

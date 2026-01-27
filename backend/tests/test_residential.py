@@ -96,7 +96,7 @@ async def test_dashboard_insights(async_client: AsyncClient):
     assert response.status_code == 200
     data = response.json()
     
-    assert "efficiency_score" in data
+    assert "efficiency_score" in data.get("metrics", {})
     assert "vampire_cost_monthly" in data
     assert "ai_advice" in data
     assert "missions" in data

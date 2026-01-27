@@ -68,18 +68,20 @@ def upgrade():
     )
     op.create_index(op.f('ix_residential_profiles_id'), 'residential_profiles', ['id'], unique=False)
     op.create_index(op.f('ix_residential_profiles_user_id'), 'residential_profiles', ['user_id'], unique=True)
-    # SQLite doesn't support ALTER COLUMN SET NOT NULL, skipping
-    # op.alter_column('roi_scenarios', 'asset_id',
-    #            existing_type=sa.INTEGER(),
-    #            nullable=False)
-    # op.alter_column('roi_scenarios', 'user_id',
-    #            existing_type=sa.INTEGER(),
-    #            nullable=False)
+    op.create_table('roi_scenarios',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('asset_id', sa.Integer(), nullable=False),
+    sa.Column('target_efficiency', sa.Float(), nullable=False),
+    sa.Column('investment_usd', sa.Float(), nullable=False),
+    sa.Column('annual_savings_usd', sa.Float(), nullable=False),
+    sa.Column('payback_months', sa.Float(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['asset_id'], ['industrial_assets.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_index(op.f('ix_roi_scenarios_id'), 'roi_scenarios', ['id'], unique=False)
-    op.drop_constraint(op.f('roi_scenarios_user_id_fkey'), 'roi_scenarios', type_='foreignkey')
-    op.drop_constraint(op.f('roi_scenarios_asset_id_fkey'), 'roi_scenarios', type_='foreignkey')
-    op.create_foreign_key(None, 'roi_scenarios', 'industrial_assets', ['asset_id'], ['id'])
-    op.create_foreign_key(None, 'roi_scenarios', 'users', ['user_id'], ['id'])
     # ### end Alembic commands ###
 
 
