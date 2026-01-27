@@ -1,18 +1,20 @@
-
 """FastAPI application entrypoint."""
 
 from __future__ import annotations
-
 import logging
-
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# --- CAMBIO IMPORTANTE: Importamos tu instancia 'ia' ---
+from app.services.ia_service import ia 
+
+# ... (Bloque try/except de slowapi igual que antes) ...
 try:
     from slowapi import Limiter
     from slowapi.util import get_remote_address
-except Exception:  # pragma: no cover - optional dependency in test env
+except Exception: 
     Limiter = None
-    # Fallback stub for get_remote_address when slowapi is not installed.
     def get_remote_address(request):
         return None
 
@@ -22,28 +24,53 @@ from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 
 logger = logging.getLogger("app")
-
-# Create limiter later inside create_app if the dependency is available.
 limiter = None
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 1. Cargar la IA al iniciar
+    try:
+        ia.load_artifacts() # <-- Usamos tu método
+        logger.info("🧠 Modelos de IA cargados correctamente")
+    except Exception as e:
+        logger.error(f"❌ Error cargando la IA: {e}")
+        # Opcional: raise e (si quieres que la app falle si no hay IA)
+
+    # 2. Gamificación (Tu lógica existente)
+    from app.db.session import get_async_session
+    from app.services.gamification import gamification_service
+    
+    logger.info("🎮 Iniciando gamificación...")
+    async for db in get_async_session():
+        try:
+            await gamification_service.seed_initial_missions(db)
+            break 
+        except Exception as e:
+            logger.error(f"⚠️ Error en gamificación: {e}")
+
+    yield 
+    
+    logger.info("🛑 Apagando aplicación...")
 
 def create_app() -> FastAPI:
     settings = get_settings()
     setup_logging()
 
-    application = FastAPI(title=settings.app_name, version=settings.project_version, docs_url="/docs", redoc_url="/redoc")
+    application = FastAPI(
+        title=settings.app_name, 
+        version=settings.project_version, 
+        docs_url="/docs", 
+        redoc_url="/redoc",
+        lifespan=lifespan # <-- Conectado
+    )
 
-    # Register custom exception handlers
     register_exception_handlers(application)
 
-    # Add rate limiter state if slowapi is available
     if Limiter is not None:
         local_limiter = Limiter(key_func=get_remote_address)
         application.state.limiter = local_limiter
-        # attach a simple 429 handler used by the limiter
         application.add_exception_handler(429, lambda request, exc: {"detail": "Rate limit exceeded"})
     else:
-        # Ensure the attribute exists for code that expects it, but leave as None
         application.state.limiter = None
 
     application.add_middleware(
@@ -56,24 +83,15 @@ def create_app() -> FastAPI:
 
     application.include_router(api_router, prefix=settings.api_v1_prefix)
 
-    @application.get("/", tags=["root"], summary="Root welcome message")
+    @application.get("/", tags=["root"])
     async def read_root() -> dict[str, str]:
-        return {"message": f"Welcome to {settings.app_name}!"}
-
-    @application.on_event("startup")
-    async def startup_event():
-        from app.db.session import get_async_session
-        from app.services.gamification import gamification_service
-        async for db in get_async_session():
-            try:
-                await gamification_service.seed_initial_missions(db)
-                logger.info("Master missions seeded successfully")
-                break # Solo necesitamos una sesión
-            except Exception as e:
-                logger.warning(f"Could not seed missions on startup (table might not exist yet): {e}")
+        # Info de estado útil para debug
+        return {
+            "message": f"Welcome to {settings.app_name}!",
+            "ia_status": "online" if ia.is_loaded else "offline"
+        }
 
     logger.info("Application started in %s mode", settings.environment)
     return application
-
 
 app = create_app()

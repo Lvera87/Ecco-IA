@@ -1,5 +1,32 @@
-from typing import Optional, Literal
+from typing import Optional, Literal, Any, Dict, List
 from pydantic import BaseModel, EmailStr, Field
+
+# =====================
+# Esquemas de Perfil (Nuevos)
+# =====================
+
+class ResidentialProfileSchema(BaseModel):
+    """Esquema para el perfil residencial que acepta el objeto de la IA."""
+    id: int
+    city: Optional[str] = None
+    stratum: Optional[int] = None
+    # Cambiamos List[float] por Any para aceptar el diccionario detallado de la IA
+    history_kwh: Optional[Any] = None 
+
+    class Config:
+        from_attributes = True
+
+class IndustrialSettingsSchema(BaseModel):
+    """Esquema para el perfil industrial."""
+    id: int
+    company_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+# =====================
+# Esquemas de Autenticación
+# =====================
 
 class LoginRequest(BaseModel):
     username: str
@@ -29,8 +56,15 @@ class TokenResponse(BaseModel):
     user_type: Optional[str] = None
 
 class UserResponse(BaseModel):
+    """Respuesta de usuario incluyendo sus perfiles relacionados."""
     id: int
     username: str
     email: str
     full_name: Optional[str]
     user_type: str
+    # Agregamos las relaciones para que FastAPI sepa cómo serializarlas
+    residential_profile: Optional[ResidentialProfileSchema] = None
+    industrial_settings: Optional[IndustrialSettingsSchema] = None
+
+    class Config:
+        from_attributes = True

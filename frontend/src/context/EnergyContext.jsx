@@ -81,18 +81,23 @@ export const EnergyProvider = ({ children }) => {
 
     const addAppliance = async (appliance) => {
         try {
-            const backendAppliance = {
-                name: appliance.name,
-                category: appliance.category,
-                icon: appliance.icon,
-                power_watts: Math.round(appliance.consumption * 1000),
-                daily_hours: appliance.usageHours || 4,
-                is_high_impact: appliance.consumption > 0.5
-            };
-            const savedAssets = await residentialApi.addAssets([backendAppliance]);
-            const newApp = savedAssets[0];
+            const quantity = appliance.quantity || 1;
+            const assetsToCreate = [];
 
-            setAppliances(prev => [...prev, {
+            for (let i = 0; i < quantity; i++) {
+                assetsToCreate.push({
+                    name: quantity > 1 ? `${appliance.name} ${i + 1}` : appliance.name,
+                    category: appliance.category,
+                    icon: appliance.icon,
+                    power_watts: Math.round(appliance.consumption * 1000),
+                    daily_hours: appliance.usageHours || 4,
+                    is_high_impact: appliance.consumption > 0.5
+                });
+            }
+
+            const savedAssets = await residentialApi.addAssets(assetsToCreate);
+
+            setAppliances(prev => [...prev, ...savedAssets.map(newApp => ({
                 id: newApp.id,
                 name: newApp.name,
                 icon: newApp.icon,
@@ -101,10 +106,11 @@ export const EnergyProvider = ({ children }) => {
                 category: newApp.category,
                 isHighImpact: newApp.is_high_impact,
                 monthlyCost: newApp.monthly_cost_estimate
-            }]);
+            }))]);
+
             return true;
         } catch (error) {
-            console.error("Error adding appliance:", error);
+            console.error("Error adding appliances:", error);
             return false;
         }
     };
