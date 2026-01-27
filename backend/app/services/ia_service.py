@@ -93,13 +93,11 @@ class IAService:
             # Run returns a list of outputs
             raw_result = self.dl_session.run(None, {input_name: input_tensor})[0]
             
-            # Extraemos el primer resultado (batch size 1)
-            result_row = raw_result[0]
+            # Aplanamos el resultado (ONNX puede retornar shape (4,1) en vez de (1,4))
+            result_flat = np.array(raw_result).flatten()
             
             # Convertimos a lista de Python estándar para compatibilidad
-            if isinstance(result_row, np.ndarray):
-                return result_row.tolist()
-            return result_row
+            return result_flat.tolist()
             
         except Exception as e:
             print(f"❌ Error en inferencia ONNX: {e}")
