@@ -69,6 +69,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 ```bash# Ejecutar migraciones (crea base de datos y tablas)
+# Nota: Si Alembic falla con SQLite, usa: python init_db.py
 
 # Clonar el repositorio.venv\Scripts\alembic upgrade head
 
