@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Refrigerator, AirVent, Tv, WashingMachine, Lightbulb, Microwave, Fan, Monitor, Droplets, Flame } from 'lucide-react';
-import { useApp, iconMap } from '../../context/AppContext';
+import { useEnergy, iconMap } from '../../context/EnergyContext';
 import Button from './Button';
 
 const applianceCategories = [
@@ -13,29 +13,30 @@ const applianceCategories = [
 ];
 
 const applianceTypes = [
-    { name: 'Nevera', icon: 'Refrigerator', consumption: 1.2, category: 'cocina' },
-    { name: 'Freezer', icon: 'Refrigerator', consumption: 0.8, category: 'cocina' },
-    { name: 'Microondas', icon: 'Microwave', consumption: 1.5, category: 'cocina' },
-    { name: 'Aire Acondicionado', icon: 'AirVent', consumption: 2.5, category: 'climatizacion' },
-    { name: 'Ventilador', icon: 'Fan', consumption: 0.3, category: 'climatizacion' },
-    { name: 'Calentador', icon: 'Flame', consumption: 3.0, category: 'climatizacion' },
-    { name: 'Televisor', icon: 'Tv', consumption: 0.15, category: 'entretenimiento' },
-    { name: 'Consola de Juegos', icon: 'Monitor', consumption: 0.2, category: 'entretenimiento' },
-    { name: 'Computador', icon: 'Monitor', consumption: 0.4, category: 'entretenimiento' },
-    { name: 'Lavadora', icon: 'WashingMachine', consumption: 0.8, category: 'lavanderia' },
-    { name: 'Secadora', icon: 'WashingMachine', consumption: 2.0, category: 'lavanderia' },
-    { name: 'Lámpara LED', icon: 'Lightbulb', consumption: 0.02, category: 'iluminacion' },
-    { name: 'Bombilla Tradicional', icon: 'Lightbulb', consumption: 0.1, category: 'iluminacion' },
-    { name: 'Calentador de Agua', icon: 'Droplets', consumption: 2.5, category: 'otros' },
+    { name: 'Nevera', icon: 'Refrigerator', consumption: 0.18, category: 'cocina' }, // ~180W Media
+    { name: 'Freezer', icon: 'Refrigerator', consumption: 0.25, category: 'cocina' },
+    { name: 'Microondas', icon: 'Microwave', consumption: 1.2, category: 'cocina' }, // Uso corto
+    { name: 'Aire Acondicionado', icon: 'AirVent', consumption: 1.0, category: 'climatizacion' }, // ~1000W Inverter/Pequeño
+    { name: 'Ventilador', icon: 'Fan', consumption: 0.06, category: 'climatizacion' }, // 60W
+    { name: 'Calentador', icon: 'Flame', consumption: 1.5, category: 'climatizacion' },
+    { name: 'Televisor', icon: 'Tv', consumption: 0.08, category: 'entretenimiento' }, // 80W LED
+    { name: 'Consola de Juegos', icon: 'Monitor', consumption: 0.15, category: 'entretenimiento' },
+    { name: 'Computador', icon: 'Monitor', consumption: 0.15, category: 'entretenimiento' }, // Laptop/Office
+    { name: 'Lavadora', icon: 'WashingMachine', consumption: 0.5, category: 'lavanderia' },
+    { name: 'Secadora', icon: 'WashingMachine', consumption: 2.5, category: 'lavanderia' }, // Alta potencia
+    { name: 'Lámpara LED', icon: 'Lightbulb', consumption: 0.01, category: 'iluminacion' }, // 10W
+    { name: 'Bombilla Tradicional', icon: 'Lightbulb', consumption: 0.06, category: 'iluminacion' },
+    { name: 'Calentador de Agua', icon: 'Droplets', consumption: 2.0, category: 'otros' },
 ];
 
 const AddApplianceModal = ({ isOpen, onClose }) => {
-    const { addAppliance } = useApp();
+    const { addAppliance } = useEnergy();
     const [step, setStep] = useState(1);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedType, setSelectedType] = useState(null);
     const [customName, setCustomName] = useState('');
     const [usageHours, setUsageHours] = useState(4);
+    const [quantity, setQuantity] = useState(1);
 
     const filteredTypes = selectedCategory
         ? applianceTypes.filter(t => t.category === selectedCategory)
@@ -49,6 +50,7 @@ const AddApplianceModal = ({ isOpen, onClose }) => {
                 consumption: selectedType.consumption,
                 usageHours,
                 category: selectedType.category,
+                quantity: quantity // Enviamos la cantidad al contexto
             });
             if (success) handleClose();
         }
@@ -60,6 +62,7 @@ const AddApplianceModal = ({ isOpen, onClose }) => {
         setSelectedType(null);
         setCustomName('');
         setUsageHours(4);
+        setQuantity(1);
         onClose();
     };
 
@@ -195,6 +198,28 @@ const AddApplianceModal = ({ isOpen, onClose }) => {
                                 />
                             </div>
 
+                            {/* Quantity Selector */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                                    Cantidad
+                                </label>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                        className="size-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-700"
+                                    >
+                                        -
+                                    </button>
+                                    <span className="text-xl font-black text-slate-900 dark:text-white w-8 text-center">{quantity}</span>
+                                    <button
+                                        onClick={() => setQuantity(Math.min(10, quantity + 1))}
+                                        className="size-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-700"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* Usage hours */}
                             <div>
                                 <div className="flex justify-between items-center mb-2">
@@ -219,9 +244,9 @@ const AddApplianceModal = ({ isOpen, onClose }) => {
 
                             {/* Estimated consumption */}
                             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Consumo estimado diario</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Consumo estimado mensual ({quantity} equipos)</p>
                                 <p className="text-2xl font-black text-slate-800 dark:text-white">
-                                    {(selectedType.consumption * usageHours).toFixed(2)} <span className="text-sm font-normal text-slate-400">kWh/día</span>
+                                    {((selectedType.consumption * usageHours * 30 * quantity).toFixed(1))} <span className="text-sm font-normal text-slate-400">kWh/mes</span>
                                 </p>
                             </div>
                         </div>

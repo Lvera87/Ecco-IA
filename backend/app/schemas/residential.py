@@ -13,7 +13,7 @@ class ResidentialProfileBase(BaseModel):
     monthly_bill_avg: Optional[float] = None
     target_monthly_bill: Optional[float] = None
     average_kwh_captured: Optional[float] = None
-    history_kwh: Optional[List[float]] = None
+    history_kwh: Optional[Any] = None  # Puede ser List[float] antiguo o Dict con desglose de IA
 
 class ResidentialProfileCreate(ResidentialProfileBase):
     pass

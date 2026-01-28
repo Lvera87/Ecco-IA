@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Leaf, TrendingDown, TreeDeciduous, Award, Target,
-  Recycle, BarChart3, Cloud, Wind, Flame
+  Recycle, BarChart3, Cloud, Wind, Flame, Car, Smartphone, Trash2, Factory
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import Card from '../components/ui/Card';
@@ -30,6 +30,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 const CarbonFootprint = () => {
   const [isMounted, setIsMounted] = React.useState(false);
   const [isReady, setIsReady] = React.useState(false);
+  const [activeMetric, setActiveMetric] = React.useState('co2'); // co2, car, phone, tree
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -52,11 +53,45 @@ const CarbonFootprint = () => {
   const config = userProfile?.config || {};
   const details = config.applianceDetails || {};
 
-  // Procesar historial para CO2
-  const monthlyData = (consumptionHistory || []).map(entry => ({
-    name: new Date(entry.date).toLocaleDateString('es-CO', { weekday: 'short' }),
-    value: (entry.value || 0) * CO2_FACTOR
-  }));
+  // Configuración de métricas interactivas
+  const METRICS_CONFIG = {
+    co2: { label: 'Emisiones CO₂', unit: 'kg', factor: 1, color: '#10b981', icon: Cloud },
+    car: { label: 'Km en Auto', unit: 'km', factor: 4, color: '#ef4444', icon: Car },
+    phone: { label: 'Cargas Celular', unit: 'cargas', factor: 120, color: '#3b82f6', icon: Smartphone },
+    tree: { label: 'Árboles Req.', unit: 'árboles', factor: 0.5, color: '#22c55e', icon: TreeDeciduous }
+  };
+
+  const currentMetric = METRICS_CONFIG[activeMetric];
+
+  // Procesar historial dinámico O generar proyección
+  const getChartData = () => {
+    // Si hay historial real, lo usamos
+    if (consumptionHistory && consumptionHistory.length > 0) {
+      return (consumptionHistory || []).map(entry => ({
+        name: new Date(entry.date).toLocaleDateString('es-CO', { weekday: 'short' }),
+        value: parseFloat(((entry.value || 0) * CO2_FACTOR * currentMetric.factor).toFixed(1)),
+        isProjection: false
+      }));
+    }
+
+    // Si NO hay historial, generamos PROYECCIÓN a 6 meses
+    const currentImpact = co2Footprint * currentMetric.factor;
+    const months = ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5', 'Mes 6'];
+
+    return months.map((month, idx) => {
+      // Simulamos una reducción progresiva gracias a EccoIA (hasta 30% en mes 6)
+      const savingsFactor = 1 - (0.05 * (idx + 1));
+      return {
+        name: month,
+        value: parseFloat(currentImpact.toFixed(1)), // Línea base (si no hace nada)
+        optimized: parseFloat((currentImpact * savingsFactor).toFixed(1)), // Con EccoIA
+        isProjection: true
+      };
+    });
+  };
+
+  const chartData = getChartData();
+  const isProjection = chartData.length > 0 && chartData[0].isProjection;
 
   // Desglose por fuente (Real según inventario)
   const carbonSources = enrichedAppliances
@@ -154,25 +189,109 @@ const CarbonFootprint = () => {
           />
         </div>
 
+        {/* EQUIVALENCIAS TANGIBLES (NUEVA SECCIÓN) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 flex items-center gap-4">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl text-red-500">
+              <Car size={24} />
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs uppercase font-bold tracking-wider">Recorrido Auto</p>
+              <p className="text-xl font-black text-slate-900 dark:text-white">
+                {(co2Footprint * 4).toFixed(0)} <span className="text-sm font-medium text-slate-400">km</span>
+              </p>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 flex items-center gap-4">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-500">
+              <Smartphone size={24} />
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs uppercase font-bold tracking-wider">Cargas Celular</p>
+              <p className="text-xl font-black text-slate-900 dark:text-white">
+                {(co2Footprint * 120).toFixed(0)} <span className="text-sm font-medium text-slate-400">cargas</span>
+              </p>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 flex items-center gap-4">
+            <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl text-amber-500">
+              <Trash2 size={24} />
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs uppercase font-bold tracking-wider">Residuos</p>
+              <p className="text-xl font-black text-slate-900 dark:text-white">
+                {(co2Footprint * 2.5).toFixed(1)} <span className="text-sm font-medium text-slate-400">bolsas</span>
+              </p>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 flex items-center gap-4">
+            <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500">
+              <Factory size={24} />
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs uppercase font-bold tracking-wider">Ind. Textil</p>
+              <p className="text-xl font-black text-slate-900 dark:text-white">
+                {(co2Footprint * 0.1).toFixed(1)} <span className="text-sm font-medium text-slate-400">camisetas</span>
+              </p>
+            </div>
+          </Card>
+        </div>
+
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Chart Section */}
           <Card className="lg:col-span-2 p-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
-                <h2 className="text-xl font-black text-slate-800 dark:text-white">Tendencia Ecológica</h2>
-                <p className="text-sm text-slate-500">Histórico de emisiones de CO₂ basado en tus reportes.</p>
+                <h2 className="text-xl font-black text-slate-800 dark:text-white">
+                  {isProjection ? 'Proyección de Impacto Futuro' : 'Tendencia de Impacto'}
+                </h2>
+                <p className="text-sm text-slate-500">
+                  {isProjection
+                    ? 'Potencial de reducción usando las recomendaciones de EccoIA.'
+                    : 'Visualiza tu historial en diferentes unidades equivalentes.'}
+                </p>
+              </div>
+
+              {/* SELECTOR DE MÉTRICA */}
+              <div className="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-lg">
+                {Object.entries(METRICS_CONFIG).map(([key, config]) => {
+                  const Icon = config.icon;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setActiveMetric(key)}
+                      className={`
+                        p-2 rounded-md transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider
+                        ${activeMetric === key
+                          ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white'
+                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}
+                      `}
+                      title={config.label}
+                    >
+                      <Icon size={16} className={activeMetric === key ? `text-[${config.color}]` : ''} style={{ color: activeMetric === key ? config.color : 'currentColor' }} />
+                      <span className="hidden sm:inline">{config.unit}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div className="h-[350px] w-full min-w-0" style={{ minHeight: '350px' }}>
-              {hasData && isReady ? (
+              {chartData.length > 0 && isReady ? (
                 <ResponsiveContainer width="100%" height={350}>
-                  <AreaChart data={monthlyData}>
+                  <AreaChart data={chartData}>
                     <defs>
-                      <linearGradient id="colorCO2" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <linearGradient id={`color-${activeMetric}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={currentMetric.color} stopOpacity={0.2} />
+                        <stop offset="95%" stopColor={currentMetric.color} stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorOptimized" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.1} />
@@ -186,22 +305,67 @@ const CarbonFootprint = () => {
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                      unit=" kg"
+                      unit={` ${currentMetric.unit}`}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-slate-900/95 border border-slate-700/50 backdrop-blur-md p-3 rounded-xl shadow-2xl">
+                              <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">{label}</p>
+                              {/* Valor Actual / Base */}
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="size-2 rounded-full" style={{ backgroundColor: currentMetric.color }} />
+                                <p className="text-sm font-bold text-slate-300">
+                                  {isProjection ? 'Actual:' : 'Impacto:'} <span className="text-white font-black text-lg">{payload[0].value}</span>
+                                </p>
+                              </div>
+
+                              {/* Valor Optimizado (Solo en proyección) */}
+                              {isProjection && payload[1] && (
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-violet-500" />
+                                  <p className="text-sm font-bold text-violet-300">
+                                    Con EccoIA: <span className="text-white font-black text-lg">{payload[1].value}</span>
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+
+                    {/* Área Principal (Actual o Histórica) */}
                     <Area
                       type="monotone"
                       dataKey="value"
-                      stroke="#10b981"
+                      stroke={currentMetric.color}
                       strokeWidth={3}
-                      fill="url(#colorCO2)"
+                      fill={`url(#color-${activeMetric})`}
+                      name="Actual"
                     />
+
+                    {/* Área Optimizada (Solo proyección) */}
+                    {isProjection && (
+                      <Area
+                        type="monotone"
+                        dataKey="optimized"
+                        stroke="#8b5cf6" // Violeta para el futuro optimizado
+                        strokeWidth={3}
+                        strokeDasharray="5 5"
+                        fill="url(#colorOptimized)"
+                        name="Con EccoIA"
+                      />
+                    )}
+
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
                 <EmptyState
-                  title="Sin datos ambientales"
-                  description="Comienza a reportar tu consumo para visualizar tu huella ecológica."
+                  title="Calculando impacto..."
+                  description="Estamos analizando tus datos de consumo."
                 />
               )}
             </div>

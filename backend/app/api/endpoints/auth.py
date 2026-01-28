@@ -1,13 +1,13 @@
 """Authentication endpoints (JWT login, register and refresh)."""
-from typing import Optional, Literal
+from typing import Optional, Literal, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Body
-from pydantic import BaseModel, EmailStr, Field
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.db.session import get_async_session
-from app.services.auth import authenticate_user, create_tokens_for_user
-from app.core.security import decode_token, get_password_hash
+from app.db.session import get_db # Usamos el alias que creamos en session.py
+from app.services.auth import authenticate_user
+from app.core import security
 from app.models.user import User
 from app.models.residential import ResidentialProfile
 from app.models.industrial_settings import IndustrialSettings
@@ -17,7 +17,7 @@ from app.models.gamification import GamificationProfile
 # Schemas
 # =====================
 
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.schemas.auth import RegisterRequest, TokenResponse
 
 router = APIRouter(tags=["auth"])
 
@@ -26,15 +26,11 @@ router = APIRouter(tags=["auth"])
 # =====================
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_async_session)) -> TokenResponse:
+async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db)) -> Any:
     """
-    Registra un nuevo usuario con su perfil específico (residencial o industrial).
-    Retorna tokens para auto-login inmediato.
+    Registra un nuevo usuario.
     """
-    import logging
-    logger = logging.getLogger("app.auth")
-    logger.info(f"Registrando nuevo usuario: {payload.username} ({payload.user_type})")
-    # Verificar si el usuario ya existe
+    # 1. Verificar si existe
     existing = await db.execute(
         select(User).where((User.username == payload.username) | (User.email == payload.email))
     )
@@ -44,18 +40,18 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_asyn
             detail="El usuario o email ya existe"
         )
     
-    # Crear usuario
+    # 2. Crear usuario
     new_user = User(
-        username=payload.username,
+        username=payload.username, # En frontend usamos email como username, pero guardamos ambos
         email=payload.email,
         full_name=payload.full_name,
-        hashed_password=get_password_hash(payload.password),
+        hashed_password=security.get_password_hash(payload.password),
         user_type=payload.user_type
     )
     db.add(new_user)
-    await db.flush()  # Obtener ID sin commit
+    await db.flush()
     
-    # Crear perfil según tipo
+    # 3. Crear perfiles adicionales
     if payload.user_type == "residential":
         profile = ResidentialProfile(
             user_id=new_user.id,
@@ -68,65 +64,84 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_asyn
     elif payload.user_type == "industrial":
         profile = IndustrialSettings(
             user_id=new_user.id,
-            company_name=payload.company_name or "Mi Empresa Industrial"
+            company_name=payload.company_name or "Mi Empresa"
         )
         db.add(profile)
     
-    # Crear perfil de gamificación (ambos tipos)
-    gami_profile = GamificationProfile(
-        user_id=new_user.id,
-        total_xp=0,
-        current_level=1,
-        eco_points=0
-    )
-    db.add(gami_profile)
+    # Gamificación
+    gami = GamificationProfile(user_id=new_user.id)
+    db.add(gami)
     
     await db.commit()
     
-    # Auto-login: generar tokens
-    tokens = await create_tokens_for_user(new_user)
-    return TokenResponse(**tokens, user_type=payload.user_type)
+    # 4. Generar tokens (Evitando bytes)
+    access_token = security.create_access_token(data={"sub": str(new_user.id)})
+    refresh_token = security.create_refresh_token(data={"sub": str(new_user.id)})
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user_type": new_user.user_type
+    }
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(payload: LoginRequest, db: AsyncSession = Depends(get_async_session)) -> TokenResponse:
-    """Inicia sesión y devuelve un par de tokens (Access + Refresh)."""
-    import logging
-    logger = logging.getLogger("app.auth")
+async def login(
+    db: AsyncSession = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends()
+) -> Any:
+    """
+    Inicia sesión aceptando 'application/x-www-form-urlencoded'.
+    Esto es lo que requiere FastAPI y lo que envía el Frontend ahora.
+    """
+    # Nota: form_data.username contendrá el email enviado desde el frontend
+    user = await authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
-    try:
-        user = await authenticate_user(db, payload.username, payload.password)
-        if not user:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
-        
-        tokens = await create_tokens_for_user(user)
-        return TokenResponse(**tokens, user_type=user.user_type)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error en login: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    # Generar tokens asegurando que sean Strings
+    access_token = security.create_access_token(data={"sub": str(user.id)})
+    refresh_token = security.create_refresh_token(data={"sub": str(user.id)})
+    
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user_type": user.user_type
+    }
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     refresh_token: str = Body(..., embed=True),
-    db: AsyncSession = Depends(get_async_session)
-) -> TokenResponse:
-    """Permite obtener un nuevo access token usando un refresh token válido."""
+    db: AsyncSession = Depends(get_db)
+) -> Any:
+    """Renueva el token."""
     try:
-        payload = decode_token(refresh_token, expected_type="refresh")
+        payload = security.decode_token(refresh_token, expected_type="refresh")
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+            raise HTTPException(status_code=401, detail="Token inválido")
             
         result = await db.execute(select(User).where(User.id == int(user_id)))
         user = result.scalar_one_or_none()
         
         if not user:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado")
+            raise HTTPException(status_code=401, detail="Usuario no encontrado")
             
-        tokens = await create_tokens_for_user(user)
-        return TokenResponse(**tokens)
+        new_access = security.create_access_token(data={"sub": str(user.id)})
+        new_refresh = security.create_refresh_token(data={"sub": str(user.id)})
+        
+        return {
+            "access_token": new_access,
+            "refresh_token": new_refresh,
+            "token_type": "bearer",
+            "user_type": user.user_type
+        }
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de refresco inválido o expirado")
+        raise HTTPException(status_code=401, detail="Token expirado o inválido")

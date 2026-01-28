@@ -86,7 +86,7 @@ const Register = () => {
             }
 
             // 4. REDIRIGIR
-            navigate(formData.user_type === 'residential' ? '/residential-config' : '/industrial-config');
+            navigate(formData.user_type === 'residential' ? '/residential-config' : '/industrial-onboarding');
 
         } catch (err) {
             console.error("Error en registro:", err);
