@@ -49,7 +49,7 @@ function App() {
             <Route path="/residential-assistant" element={<ResidentialAssistant />} />
             <Route path="/results-dashboard" element={<ResultsDashboard />} />
             <Route path="/design-system" element={<DesignSystem />} />
-            <Route path="/industrial-onboarding" element={<IndustrialOnboarding />} />
+            <Route path="/industrial-onboarding" element={<IndustrialConfig />} />
             <Route path="/profile" element={<UserProfile />} />
           </Routes>
         </Layout>

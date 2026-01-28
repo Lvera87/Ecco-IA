@@ -49,6 +49,7 @@ const Register = () => {
         setError('');
     };
 
+    // --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -67,15 +68,34 @@ const Register = () => {
         }
 
         try {
+            // 1. REGISTRAR EL USUARIO
+            console.log("Creando usuario...");
             await authApi.register(formData);
-            // Redirect to appropriate config/onboarding
-            navigate(formData.user_type === 'residential' ? '/residential-config' : '/industrial-onboarding');
+
+            // 2. AUTO-LOGIN (Iniciar sesión automáticamente)
+            console.log("Iniciando sesión automática...");
+            const loginResponse = await authApi.login({
+                username: formData.email,
+                password: formData.password
+            });
+
+            // 3. GUARDAR EL TOKEN (Esto arregla el error 401)
+            if (loginResponse.access_token) {
+                localStorage.setItem('token', loginResponse.access_token);
+                console.log("✅ Token guardado correctamente");
+            }
+
+            // 4. REDIRIGIR
+            navigate(formData.user_type === 'residential' ? '/residential-config' : '/industrial-config');
+
         } catch (err) {
-            setError(err.message || 'Error al crear la cuenta');
+            console.error("Error en registro:", err);
+            setError(err.message || 'Error al crear la cuenta. Intenta iniciar sesión.');
         } finally {
             setLoading(false);
         }
     };
+    // --------------------------------------
 
     return (
         <div className="min-h-screen bg-slate-950 font-body text-slate-200 flex flex-col items-center justify-center p-6 relative overflow-hidden">

@@ -68,5 +68,32 @@ export const industrialApi = {
     getRoiScenarios: async (assetId) => {
         const response = await client.get(`/industrial/assets/${assetId}/roi-scenarios`);
         return response.data;
+    },
+
+    /**
+     * Get Industrial Settings (Sector, Consumption, Area)
+     */
+    getSettings: async () => {
+        const response = await client.get('/industrial/settings');
+        return response.data;
+    },
+
+    /**
+     * Update Industrial Settings
+     * @param {Object} settings - { sector_id, baseline_consumption_kwh, area_m2, ... }
+     */
+    updateSettings: async (settings) => {
+        const response = await client.put('/industrial/settings', settings);
+        return response.data;
+    },
+
+    /**
+     * Get AI prediction for industrial consumption breakdown
+     * @param {Object} data - { sector_id, consumo_total, area_m2, tarifa_kwh? }
+     * @returns {Object} - { desglose, factura_estimada_cop, recomendacion, ... }
+     */
+    predict: async (data) => {
+        const response = await client.post('/industrial/predict', data);
+        return response.data;
     }
 };
