@@ -7,7 +7,7 @@ from app.api import deps
 from app.db.session import get_async_session
 from app.models.user import User
 from app.models.industrial_settings import IndustrialSettings
-from app.schemas.industrial_settings import IndustrialSettings as IndustrialSettingsSchema
+from app.schemas.industrial_settings import IndustrialSettingsRead as IndustrialSettingsSchema
 from app.schemas.industrial_settings import IndustrialSettingsUpdate
 
 router = APIRouter()

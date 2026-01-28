@@ -14,6 +14,11 @@ class IndustrialSettings(Base):
     industry_sector = Column(String, default="Manufactura")
     contact_email = Column(String, nullable=True)
     
+    # Configuración de Planta (Añadido para persistencia de Dashboard)
+    area_m2 = Column(Float, default=0.0)
+    baseline_consumption_kwh = Column(Float, default=0.0)
+    sector_id = Column(Integer, default=1)
+    
     # Gestión Energética
     monthly_budget_limit = Column(Float, default=50000.0)
     energy_cost_per_kwh = Column(Float, default=0.15) # Costo por kWh (USD/COP/etc)
