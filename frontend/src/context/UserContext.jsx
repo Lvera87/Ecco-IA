@@ -127,12 +127,13 @@ export const UserProvider = ({ children }) => {
         try {
             const result = await gamificationApi.completeMission(missionId);
             await syncGamification(true);
+            await syncUserProfile(); // FETCH THE NEW LOWER BILL PROJECTION!
             return result;
         } catch (error) {
             console.error("Error al reclamar misión:", error);
             return null;
         }
-    }, [syncGamification]);
+    }, [syncGamification, syncUserProfile]);
 
     const updateProfile = useCallback((updates) => {
         setUserProfile(prev => ({ ...prev, ...updates }));

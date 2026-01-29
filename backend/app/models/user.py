@@ -20,4 +20,5 @@ class User(Base):
     industrial_assets = relationship("IndustrialAsset", back_populates="user", cascade="all, delete-orphan")
     residential_assets = relationship("ResidentialAsset", back_populates="user", cascade="all, delete-orphan")
     consumption_readings = relationship("ConsumptionReading", back_populates="user", cascade="all, delete-orphan")
+    documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
 

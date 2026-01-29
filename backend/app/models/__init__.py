@@ -4,6 +4,7 @@ from app.models.industrial_settings import IndustrialSettings
 from app.models.industrial_asset import IndustrialAsset
 from app.models.gamification import GamificationProfile, Mission, UserMission
 from app.models.roi_scenario import RoiScenario
+from app.models.document import Document
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "Mission",
     "UserMission",
     "RoiScenario",
+    "Document",
 ]

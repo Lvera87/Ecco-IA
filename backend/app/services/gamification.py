@@ -1,9 +1,13 @@
 from typing import List, Dict, Any, Optional
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.gamification import GamificationProfile, Mission, UserMission
 from app.models.user import User
-from datetime import datetime
+from datetime import datetime, timedelta
+from app.services.gemini_service import gemini_service
+import logging
+
+logger = logging.getLogger(__name__)
 
 class GamificationService:
     """
@@ -51,6 +55,89 @@ class GamificationService:
         await db.commit()
         return profile
 
+    async def refresh_daily_missions(self, db: AsyncSession, user_id: int):
+        """
+        Verifica y genera misiones diarias limitadas a 4 por día.
+        """
+        # 1. Check existing missions for today
+        today = datetime.utcnow().date()
+        query = select(func.count(UserMission.id)).where(
+            UserMission.user_id == user_id,
+            func.date(UserMission.created_at) == today
+        )
+        result = await db.execute(query)
+        count_today = result.scalar()
+
+        logger.info(f"CHECK MISIONES: Usuario {user_id} tiene {count_today} misiones hoy. (Límite: 4)")
+
+        if count_today >= 4:
+            logger.info("CHECK MISIONES: Límite diario alcanzado. No se generan nuevas.")
+            return  # Limit reached
+            
+        needed = 4 - count_today
+        if needed <= 0: return
+
+        # 2. Fetch User Context (Appliances & Consumption)
+        from app.models.residential import InventoryItem, ConsumptionRecord
+        
+        # Appliances
+        app_result = await db.execute(select(InventoryItem).where(InventoryItem.user_id == user_id))
+        appliances = app_result.scalars().all()
+        appliance_list = ", ".join([f"{a.name} ({a.category})" for a in appliances]) or "Ninguno registrado"
+
+        # Recent Consumption (Last 7 days avg)
+        avg_consumption = "Desconocido"
+        try:
+            cons_query = select(ConsumptionRecord).where(
+                ConsumptionRecord.user_id == user_id
+            ).order_by(ConsumptionRecord.date.desc()).limit(7)
+            cons_result = await db.execute(cons_query)
+            records = cons_result.scalars().all()
+            if records:
+                avg = sum(r.value for r in records) / len(records)
+                avg_consumption = f"{avg:.2f} kWh/día"
+        except Exception:
+            pass
+
+        # Build Context
+        context = f"""
+        Usuario ID: {user_id}
+        Electrodomésticos: {appliance_list}
+        Consumo Reciente: {avg_consumption}
+        Objetivo: Reducir factura y huella de carbono.
+        """
+
+        # 3. Generate with AI
+        logger.info(f"--- GENERANDO NUEVAS MISIONES DIARIAS PARA USUARIO {user_id} ---")
+        ai_missions = await gemini_service.generate_daily_missions(context)
+        
+        # 4. Create and Assign
+        created_missions = []
+        for m_data in ai_missions[:needed]:
+            # Create a dynamic mission entry
+            new_mission = Mission(
+                title=m_data.get("title", "Misión Diaria"),
+                description=m_data.get("description", "Ahorra energía hoy"),
+                xp_reward=m_data.get("xp_reward", 50),
+                icon=m_data.get("icon", "Zap"),
+                category="ai_daily",
+                mission_type="dynamic"
+            )
+            db.add(new_mission)
+            await db.flush() # Get ID
+            
+            # Assign to user
+            user_mission = UserMission(
+                user_id=user_id,
+                mission_id=new_mission.id,
+                status="pending",
+                progress=0.0
+            )
+            db.add(user_mission)
+            created_missions.append(user_mission)
+            
+        await db.commit()
+    
     async def get_user_missions(self, db: AsyncSession, user_id: int):
         """Obtiene las misiones activas y completadas del usuario con carga inmediata de misión."""
         from sqlalchemy.orm import selectinload
@@ -93,7 +180,48 @@ class GamificationService:
         
         # Check level up
         profile.current_level = self.calculate_level(profile.total_xp)
-        
+
+        # 3. Aplicar ahorro energético (Reducir factura proyectada)
+        from app.models.residential import ResidentialProfile
+        res_profile_result = await db.execute(select(ResidentialProfile).where(ResidentialProfile.user_id == user_id))
+        res_profile = res_profile_result.scalar_one_or_none()
+
+        if res_profile:
+            # 3.1. Calculate Savings
+            saving_kwh = 0.0
+            
+            # Hardcoded legacy map
+            savings_map = {
+                "Caza de Vampiros": 15.0,
+                "Hogar Consciente": 8.0,
+                "Apagar Luces": 5.0
+            }
+            
+            if mission.title in savings_map:
+                saving_kwh = savings_map[mission.title]
+            elif mission.category == "ai_daily":
+                 # AI Missions default savings (could be stored in mission.metadata later)
+                 saving_kwh = 5.0 # Conservative default for daily tasks
+            
+            # 3.2 Apply reduction
+            if saving_kwh > 0:
+                # Inicializar si es nulo
+                if res_profile.average_kwh_captured is None:
+                    res_profile.average_kwh_captured = 200.0 # Valor base default
+                
+                # Aplicar reducción (sin bajar de un mínimo razonable)
+                # El ahorro es PERMANENTE en la estimación del "base load" (consumo no medido)
+                current_base = res_profile.average_kwh_captured
+                new_val = max(50.0, current_base - saving_kwh)
+                res_profile.average_kwh_captured = new_val
+                
+                # También actualizar el promedio de factura si existe
+                if res_profile.monthly_bill_avg:
+                     # Actualizamos el valor monetario
+                     # Asumimos precio promedio ~800 COP/kWh si no tenemos el exacto a mano aquí
+                     estimated_saving_money = saving_kwh * 850
+                     res_profile.monthly_bill_avg = max(50000.0, res_profile.monthly_bill_avg - estimated_saving_money)
+
         await db.commit()
         return user_mission
 

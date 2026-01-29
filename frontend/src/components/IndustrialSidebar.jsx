@@ -4,7 +4,6 @@ import { Factory, LayoutDashboard, Globe, LogOut, MessageSquareText, Settings } 
 const IndustrialSidebar = ({ isOpen, onClose }) => {
     const navItems = [
         { to: "/industrial-dashboard", icon: LayoutDashboard, label: "Dashboard IA" },
-        { to: "/data-assistant", icon: MessageSquareText, label: "Asistente Ecco" },
         { to: "/global-consumption", icon: Globe, label: "Fugas y Desperdicio" },
     ];
 

@@ -61,6 +61,7 @@ export const EnergyProvider = ({ children }) => {
                     id: r.id,
                     date: r.date,
                     value: r.reading_value,
+                    cost: r.cost,
                     type: r.reading_type
                 })));
             }
@@ -142,12 +143,15 @@ export const EnergyProvider = ({ children }) => {
         try {
             const saved = await residentialApi.addReading({
                 reading_value: parseFloat(reading.value || reading.reading),
-                reading_type: reading.type || 'manual'
+                reading_type: reading.type || 'manual',
+                ...(reading.date && { date: reading.date }),
+                ...(reading.cost && { cost: parseFloat(reading.cost) })
             });
             setConsumptionHistory(prev => [{
                 id: saved.id,
                 date: saved.date,
                 value: saved.reading_value,
+                cost: saved.cost,
                 type: saved.reading_type
             }, ...prev]);
             return true;

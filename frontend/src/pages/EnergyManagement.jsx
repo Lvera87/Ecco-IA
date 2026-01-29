@@ -5,11 +5,12 @@ import {
     PieChart as PieIcon, Lightbulb,
     CheckCircle, Play, Info, X, Plus, Search,
     Filter, Trash2, Edit3, CheckCircle2, AlertTriangle,
-    Wind, ShieldAlert, Zap
+    Wind, ShieldAlert, Zap, UploadCloud
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, PieChart, Pie, Cell
+    Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
+    ComposedChart, Bar, Line, BarChart
 } from 'recharts';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -24,6 +25,8 @@ import { useEnergy, iconMap } from '../context/EnergyContext';
 import { useUI } from '../context/UIContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
 import ApplianceDetailModal from '../components/ui/ApplianceDetailModal';
+import BillUploadModal from '../components/ui/BillUploadModal'; // New Import
+import MissionsPanel from '../components/MissionsPanel';
 
 // Mapeo de imágenes ilustrativas (Duplicado de Dashboard para consistencia)
 const APPLIANCE_IMAGES = {
@@ -96,13 +99,18 @@ const EnergyManagement = () => {
     const [applianceToDelete, setApplianceToDelete] = useState(null);
     const [isReady, setIsReady] = useState(false);
 
+    // Bill Upload State
+    const [isBillUploadOpen, setIsBillUploadOpen] = useState(false);
+    const [lastUploadedBill, setLastUploadedBill] = useState(null);
+
     // Micro-Contexts: User domain
     const { userProfile } = useUser();
 
     // Micro-Contexts: Energy domain
     const {
         appliances, consumptionHistory, removeAppliance,
-        toggleAppliance, syncEnergyData: syncDashboardData
+        toggleAppliance, syncEnergyData: syncDashboardData,
+        addConsumptionReading
     } = useEnergy();
 
     // Micro-Contexts: UI domain
@@ -137,17 +145,103 @@ const EnergyManagement = () => {
 
     const totalPotentialSavings = recommendations.reduce((sum, r) => sum + r.savings, 0);
 
-    const chartData = consumptionHistory?.slice(-12).map(h => ({
-        name: new Date(h.date).toLocaleDateString([], { month: 'short' }),
-        costo: h.value * 850,
-        ahorro: (h.value * 850) * 0.12
-    })) || [];
+    const chartData = useMemo(() => {
+        if (!consumptionHistory || consumptionHistory.length === 0) return [];
+
+        // 1. Clonar y ordenar cronológicamente (Antiguo -> Nuevo)
+        const sortedData = [...consumptionHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // 2. Tomar los últimos 12 meses
+        return sortedData.slice(-12).map(h => ({
+            name: new Date(h.date).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
+            costo: h.cost || (h.value * 850), // Usar costo real si existe, sino estimado
+            ahorro: (h.cost || (h.value * 850)) * 0.12,
+            consumo: h.value
+        }));
+    }, [consumptionHistory]);
+
+    // --- LOGIC FROM ENERGY ANALYSIS ---
+    // Hourly distribution (Mock based on profile)
+    const isNightOwl = userProfile?.config?.occupancyProfile === 'night_owl';
+    const hourlyData = [
+        { hora: '00:00', value: isNightOwl ? 0.8 : 0.2 },
+        { hora: '04:00', value: 0.1 },
+        { hora: '08:00', value: 1.5 },
+        { hora: '12:00', value: 1.2 },
+        { hora: '16:00', value: 0.8 },
+        { hora: '20:00', value: isNightOwl ? 2.8 : 1.6 },
+    ];
+
+    // Daily/Weekly Breakdown (Simulated from history for granularity)
+    const processedAnalysisData = consumptionHistory.slice(0, 7).map(entry => ({
+        name: new Date(entry.date).toLocaleDateString('es-CO', { weekday: 'short' }),
+        consumo: entry.value,
+        promedio: 12.5, // Mock baseline
+        costo: entry.value * kwhPrice
+    }));
 
     const handleToggle = (id) => toggleAppliance(id);
     const handleDelete = async (id) => {
         await removeAppliance(id);
         setApplianceToDelete(null);
         addNotification({ type: 'info', title: 'Inventario actualizado', message: 'Dispositivo eliminado.' });
+    };
+
+    // Feature Flags (Driven by User Preferences)
+    const showFinancialAnalysis = userProfile?.config?.show_financial_analysis ?? true;
+
+    const handleBillParsed = async (data) => {
+        setLastUploadedBill(data);
+        addNotification({
+            type: 'success',
+            title: 'Factura Procesada',
+            message: `Consumo: ${data.total_kwh} kWh. Total: $${data.total_cost?.toLocaleString()}`
+        });
+
+        // Create a list of readings to process (Current + Historical)
+        const readingsToSave = [];
+
+        // 1. Current reading (Priority)
+        if (data.total_kwh) {
+            // Prefer end date of the period, otherwise today
+            const readingDate = data.period_end ? new Date(data.period_end).toISOString() : new Date().toISOString();
+
+            readingsToSave.push({
+                value: data.total_kwh,
+                type: 'bill_scan',
+                date: readingDate,
+                cost: data.total_cost
+            });
+        }
+
+        // 2. Historical readings (if AI extracted them)
+        if (data.historical_consumption && Array.isArray(data.historical_consumption)) {
+            console.log("Processing historical data points:", data.historical_consumption.length);
+            data.historical_consumption.forEach(item => {
+                // Determine valid date
+                const histDate = item.date ? new Date(item.date).toISOString() : null;
+                if (histDate && item.kwh) {
+                    readingsToSave.push({
+                        value: item.kwh,
+                        type: 'bill_scan_history',
+                        date: histDate,
+                        cost: item.cost
+                    });
+                }
+            });
+        }
+
+        // 3. Process all readings
+        let savedCount = 0;
+        for (const reading of readingsToSave) {
+            // Avoid duplicates? The backend doesn't check uniquely, but dates help.
+            await addConsumptionReading(reading);
+            savedCount++;
+        }
+
+        if (savedCount > 0) {
+            addNotification({ type: 'info', title: 'Historial Actualizado', message: `Se han añadido ${savedCount} registros a tu gráfico de consumo.` });
+        }
     };
 
     return (
@@ -175,12 +269,21 @@ const EnergyManagement = () => {
                             >
                                 Inventario Energético
                             </button>
+                            {showFinancialAnalysis && (
+                                <button
+                                    onClick={() => setActiveTab('finances')}
+                                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all
+                                        ${activeTab === 'finances' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Análisis Económico
+                                </button>
+                            )}
                             <button
-                                onClick={() => setActiveTab('finances')}
+                                onClick={() => setActiveTab('missions')}
                                 className={`px-6 py-2 rounded-lg text-xs font-bold transition-all
-                                    ${activeTab === 'finances' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                                    ${activeTab === 'missions' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                             >
-                                Auditoría Financiera
+                                Misiones
                             </button>
                         </div>
                         {activeTab === 'inventory' && (
@@ -190,6 +293,15 @@ const EnergyManagement = () => {
                                 icon={Plus}
                             >
                                 Añadir Equipo
+                            </Button>
+                        )}
+                        {activeTab === 'finances' && showFinancialAnalysis && (
+                            <Button
+                                onClick={() => setIsBillUploadOpen(true)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 border-none shadow-emerald-500/20 shadow-lg"
+                                icon={UploadCloud}
+                            >
+                                Subir Factura
                             </Button>
                         )}
                     </div>
@@ -236,15 +348,19 @@ const EnergyManagement = () => {
                     />
                 </div>
 
+
+
                 {/* Main Content Tabs */}
-                {activeTab === 'finances' ? (
+                {activeTab === 'missions' ? (
+                    <MissionsPanel />
+                ) : activeTab === 'finances' && showFinancialAnalysis ? (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fadeIn">
                         {/* Cost Trend Chart */}
                         <Card className="lg:col-span-2 p-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                             <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <h2 className="text-xl font-black text-slate-800 dark:text-white">Evolución de Costos</h2>
-                                    <p className="text-sm text-slate-500">Histórico de facturación vs potencial de ahorro.</p>
+                                    <h2 className="text-xl font-black text-slate-800 dark:text-white">Análisis de Tendencias</h2>
+                                    <p className="text-sm text-slate-500">Histórico de comportamiento financiero vs potencial de ahorro.</p>
                                 </div>
                             </div>
 
@@ -273,7 +389,7 @@ const EnergyManagement = () => {
                         <Card className="p-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                             <h2 className="text-xl font-black text-slate-800 dark:text-white mb-8 flex items-center gap-2">
                                 <PieIcon className="text-primary" size={24} />
-                                Distribución por Carga
+                                <span className="truncate">Distribución por Carga</span>
                             </h2>
 
                             <div className="h-[220px] mb-8">
@@ -299,11 +415,79 @@ const EnergyManagement = () => {
                                     <div key={idx} className="flex items-center justify-between group">
                                         <div className="flex items-center gap-3">
                                             <div className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
-                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.name}</span>
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[100px]">{item.name}</span>
                                         </div>
                                         <span className="text-sm font-black text-slate-800 dark:text-white">{formatMoney(item.value * kwhPrice)}</span>
                                     </div>
                                 ))}
+                            </div>
+                        </Card>
+
+                        {/* Billing History Table - FULL WIDTH */}
+                        <Card className="lg:col-span-3 p-8 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-800 dark:text-white">Histórico de Facturación</h2>
+                                    <p className="text-sm text-slate-500">Registro detallado de tus facturas y lecturas de consumo.</p>
+                                </div>
+                                <Button
+                                    onClick={() => {/* Download Export logic would go here */ }}
+                                    variant="outline"
+                                    className="border-slate-200 dark:border-slate-700"
+                                    icon={Download}
+                                >
+                                    Exportar
+                                </Button>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            <th className="pb-4 pl-4">Fecha</th>
+                                            <th className="pb-4 text-center">Fuente</th>
+                                            <th className="pb-4 text-right">Consumo (kWh)</th>
+                                            <th className="pb-4 text-right">Costo Real ($)</th>
+                                            <th className="pb-4 text-right pr-4">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {consumptionHistory && consumptionHistory.length > 0 ? (
+                                            consumptionHistory.map((record) => (
+                                                <tr key={record.id} className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                    <td className="py-4 pl-4 font-bold text-slate-700 dark:text-slate-300">
+                                                        {new Date(record.date).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="py-4 text-center">
+                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase ${record.type === 'bill_scan'
+                                                            ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300'
+                                                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                                            }`}>
+                                                            {record.type === 'bill_scan' ? 'Factura IA' : 'Manual'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-4 text-right font-medium text-slate-600 dark:text-slate-400">
+                                                        {record.value.toFixed(1)} kWh
+                                                    </td>
+                                                    <td className="py-4 text-right font-black text-emerald-600 dark:text-emerald-400">
+                                                        {record.cost ? formatMoney(record.cost) : <span className="text-slate-300 dark:text-slate-600 italic">--</span>}
+                                                    </td>
+                                                    <td className="py-4 text-right pr-4">
+                                                        <div className="flex justify-end">
+                                                            <CheckCircle2 size={16} className="text-emerald-500" />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="5" className="py-8 text-center text-slate-400 italic">
+                                                    No hay registros de facturas aún. Sube tu primera factura para comenzar.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </Card>
                     </div>
@@ -506,8 +690,14 @@ const EnergyManagement = () => {
                     }}
                 />
 
+                <BillUploadModal
+                    isOpen={isBillUploadOpen}
+                    onClose={() => setIsBillUploadOpen(false)}
+                    onDataParsed={handleBillParsed}
+                />
+
             </div>
-        </div>
+        </div >
     );
 };
 

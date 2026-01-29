@@ -266,7 +266,7 @@ const Dashboard = () => {
       {!showInsightAlert && dashboardInsights && (
         <button
           onClick={() => setShowInsightAlert(true)}
-          className="fixed bottom-6 right-6 z-50 bg-emerald-500 text-white p-3 rounded-full shadow-lg shadow-emerald-500/30 hover:scale-110 transition-transform flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4"
+          className="fixed bottom-6 right-28 z-50 bg-emerald-500 text-white p-3 rounded-full shadow-lg shadow-emerald-500/30 hover:scale-110 transition-transform flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4"
         >
           <Lightbulb size={20} />
           <span className="text-xs font-bold hidden md:inline">Ver Insight</span>

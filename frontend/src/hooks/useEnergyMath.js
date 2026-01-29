@@ -159,9 +159,14 @@ export const useEnergyMath = () => {
         ...calculations,
         ...totals,
         // Override projected metrics with dynamic totals to reflect toggle changes immediately
-        projectedBill: calculations.projectedBill > 0 && dashboardInsights?.metrics?.projected_bill
-            ? calculations.projectedBill
-            : totals.totalMonthlyCost,
+        // If the user has an inventory, that IS their projection. Fallback to history only if empty.
+        projectedBill: appliances.length > 0
+            ? totals.totalMonthlyCost
+            : calculations.projectedBill,
+
+        projectedKwh: appliances.length > 0
+            ? totals.totalNominalKwh * 30
+            : calculations.projectedKwh,
 
         // Dynamic Environmental Impact
         co2Footprint: calculations.co2Footprint > 0 && dashboardInsights?.metrics?.co2_footprint

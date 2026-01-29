@@ -20,6 +20,10 @@ async def get_user_stats(
     Obtiene el estado actual de gamificación del usuario: nivel, XP y misiones.
     """
     profile = await gamification_service.get_or_create_profile(db, current_user.id)
+    
+    # Refresh daily missions (AI check)
+    await gamification_service.refresh_daily_missions(db, current_user.id)
+    
     missions = await gamification_service.get_user_missions(db, current_user.id)
     
     # Calcular XP para el siguiente nivel (Fórmula inversa simple)

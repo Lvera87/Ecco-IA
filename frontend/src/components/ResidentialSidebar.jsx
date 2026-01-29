@@ -22,10 +22,7 @@ const ResidentialSidebar = ({ isOpen, onClose }) => {
 
   const navItems = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Panel de Control" },
-    { to: "/energy-management", icon: Receipt, label: "Inventario Energético" },
-    { to: "/residential-assistant", icon: MessageSquareText, label: "Asistente Ecco" },
-    { to: "/missions", icon: Trophy, label: "Misiones" },
-    { to: "/energy-analysis", icon: LineChart, label: "Análisis" },
+    { to: "/energy-management", icon: Receipt, label: "Centro de Energía" },
     { to: "/carbon-footprint", icon: Leaf, label: "Huella de Carbono" },
   ];
 

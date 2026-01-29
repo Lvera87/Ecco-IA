@@ -110,6 +110,14 @@ export const authApi = {
     async getMe() {
         const response = await client.get('/users/me');
         return response.data;
+    },
+
+    /**
+     * Actualiza el perfil del usuario (nombre, email, telefono)
+     */
+    async updateUser(data) {
+        const response = await client.put('/users/me', data);
+        return response.data;
     }
 };
 

@@ -10,7 +10,11 @@ from app.api.endpoints import (
     settings, 
     residential, 
     gamification,
-    prediction # <-- NUEVO: Importamos el archivo de la IA
+    gamification,
+    gamification,
+    prediction, # <-- NUEVO: Importamos el archivo de la IA
+    analysis, # <-- Facturas
+    documents # <-- Subida de archivos
 )
 
 api_router = APIRouter()
@@ -26,3 +30,5 @@ api_router.include_router(settings.router, prefix="/settings", tags=["settings"]
 # 2. Registramos la ruta de la IA
 # El prefijo "/ia" significa que tus URLs serán: /api/v1/ia/predict
 api_router.include_router(prediction.router, prefix="/ia", tags=["Artificial Intelligence"])
+api_router.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
+api_router.include_router(documents.router, prefix="/documents", tags=["documents"])

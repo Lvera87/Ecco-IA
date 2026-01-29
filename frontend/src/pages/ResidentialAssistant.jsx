@@ -6,6 +6,7 @@ import {
 import { residentialApi } from '../api/residential';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+import { useUser } from '../context/UserContext';
 
 const ResidentialAssistant = () => {
     const [messages, setMessages] = useState([
@@ -21,6 +22,20 @@ const ResidentialAssistant = () => {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
+
+    const { claimMission, missions } = useUser();
+
+    // Auto-claim "Auditor Novato" when visiting the assistant
+    useEffect(() => {
+        if (!missions) return;
+        const auditorMission = missions.find(m => m.title === 'Auditor Novato' && m.status === 'active');
+        if (auditorMission) {
+            // Small delay to simulate "using" the tool
+            setTimeout(() => {
+                claimMission(auditorMission.id);
+            }, 2000);
+        }
+    }, [missions]);
 
     useEffect(() => {
         scrollToBottom();

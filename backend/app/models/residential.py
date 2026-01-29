@@ -64,6 +64,7 @@ class ConsumptionReading(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     reading_value = Column(Float, nullable=False) # kWh
+    cost = Column(Float, nullable=True) # Actual billed cost
     date = Column(DateTime(timezone=True), server_default=func.now())
     reading_type = Column(String(50), default="manual") # manual, scannned
     

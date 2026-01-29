@@ -11,7 +11,6 @@ import GlobalConsumption from './pages/GlobalConsumption.jsx';
 import ProfileSelection from './pages/ProfileSelection.jsx';
 import ResidentialConfig from './pages/ResidentialConfig.jsx';
 import ResultsDashboard from './pages/ResultsDashboard.jsx';
-import EnergyAnalysis from './pages/EnergyAnalysis.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import EnergyManagement from './pages/EnergyManagement.jsx';
 import Missions from './pages/Missions.jsx';
@@ -22,6 +21,7 @@ import UserProfile from './pages/UserProfile.jsx';
 import Layout from './components/Layout.jsx';
 import IndustrialOnboarding from './pages/IndustrialOnboarding.jsx';
 import ResidentialAssistant from './pages/ResidentialAssistant.jsx';
+import Documents from './pages/Documents.jsx';
 
 function App() {
   return (
@@ -39,7 +39,6 @@ function App() {
             <Route path="/appliances" element={<EnergyManagement />} />
             <Route path="/missions" element={<Missions />} />
             <Route path="/financial-impact" element={<EnergyManagement />} />
-            <Route path="/energy-analysis" element={<EnergyAnalysis />} />
             <Route path="/carbon-footprint" element={<CarbonFootprint />} />
             <Route path="/industrial-dashboard" element={<IndustrialDashboard />} />
             <Route path="/industrial-settings" element={<IndustrialSettings />} />
@@ -51,6 +50,7 @@ function App() {
             <Route path="/design-system" element={<DesignSystem />} />
             <Route path="/industrial-onboarding" element={<IndustrialOnboarding />} />
             <Route path="/profile" element={<UserProfile />} />
+            <Route path="/documents" element={<Documents />} />
           </Routes>
         </Layout>
       </Router>

@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import ResidentialSidebar from './ResidentialSidebar';
 import ResidentialHeader from './ResidentialHeader';
+import FloatingAssistant from './FloatingAssistant';
 
 const ResidentialLayout = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -20,6 +21,7 @@ const ResidentialLayout = ({ children }) => {
           {children}
         </main>
       </div>
+      <FloatingAssistant />
     </div>
   );
 };

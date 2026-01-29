@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import IndustrialSidebar from './IndustrialSidebar';
 import IndustrialHeader from './IndustrialHeader';
+import FloatingAssistant from './FloatingAssistant';
 
 const IndustrialLayout = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -20,6 +21,7 @@ const IndustrialLayout = ({ children }) => {
           {children}
         </main>
       </div>
+      <FloatingAssistant />
     </div>
   );
 };

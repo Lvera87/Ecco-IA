@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authApi } from '../api/auth';
 import {
     User, Mail, Phone, MapPin, Edit2, Camera, Shield, Bell,
     Palette, Globe, LogOut, ChevronRight, Moon, Sun, Check,
@@ -40,25 +41,8 @@ const StatBadge = ({ icon: Icon, value, label, color }) => (
 
 const UserProfile = () => {
     const navigate = useNavigate();
-    const { userProfile } = useUser();
+    const { userProfile, setUserProfile, claimMission, missions } = useUser();
     const { theme, setTheme } = useUI();
-
-    // Sync state with Context (DB Data)
-    useEffect(() => {
-        if (userProfile.name) {
-            setProfileData({
-                name: userProfile.name || '',
-                email: userProfile.email || '',
-                phone: userProfile.phone || '',
-                location: userProfile.location || '',
-            });
-        }
-    }, [userProfile]);
-
-    // Fallback/Derived values
-    const efficiency = userProfile.config?.efficiency_percentage || 94; // TODO: Calculate real
-    const budget = userProfile.config?.target_monthly_bill || 150000;
-    const co2 = 15; // TODO: Calculate real
 
     const [editMode, setEditMode] = useState(false);
     const [profileData, setProfileData] = useState({
@@ -74,6 +58,46 @@ const UserProfile = () => {
         weekly: true,
         tips: true,
     });
+
+    // Sync state with Context (DB Data)
+    useEffect(() => {
+        // Only update local state from context if we are NOT editing
+        // This prevents overwriting user input if a background sync happens
+        if (!editMode && userProfile) {
+            setProfileData({
+                name: userProfile.name || '',
+                email: userProfile.email || '',
+                phone: userProfile.phone || '',
+                location: userProfile.location || '',
+            });
+        }
+    }, [userProfile, editMode]);
+
+    // Auto-complete "Eco-Onboarding" if profile has minimal data
+    useEffect(() => {
+        if (!userProfile || !missions) return;
+
+        const isOnboardingMissionActive = missions.some(m => m.title === 'Eco-Onboarding' && m.status === 'active');
+
+        if (isOnboardingMissionActive) {
+            // Check completeness logic: At least name, email, phone, and minimal residential/industrial info
+            const hasBasicInfo = userProfile.name && userProfile.email && userProfile.phone;
+            const hasResidentialInfo = userProfile.residential_profile && userProfile.residential_profile.stratum;
+            const hasIndustrialInfo = userProfile.industrial_settings && userProfile.industrial_settings.industry_type;
+
+            if (hasBasicInfo && (hasResidentialInfo || hasIndustrialInfo)) {
+                const mission = missions.find(m => m.title === 'Eco-Onboarding');
+                if (mission) {
+                    claimMission(mission.id);
+                }
+            }
+        }
+    }, [userProfile, missions]);
+
+    // Fallback/Derived values
+    const efficiency = userProfile.config?.efficiency_percentage || 94; // TODO: Calculate real
+    const budget = userProfile.config?.target_monthly_bill || 150000;
+    const co2 = 15; // TODO: Calculate real
 
     const handleLogout = () => {
         localStorage.clear();
@@ -136,7 +160,41 @@ const UserProfile = () => {
                                     variant={editMode ? 'primary' : 'outline'}
                                     className={!editMode ? "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800" : ""}
                                     icon={editMode ? Check : Edit2}
-                                    onClick={() => setEditMode(!editMode)}
+                                    onClick={async () => {
+                                        if (editMode) {
+                                            // GUARDAR CAMBIOS
+                                            try {
+                                                const { authApi } = await import('../api/auth'); // Dynamic import to avoid cycles/issues if needed, or better use hook
+
+                                                // Prepare payload
+                                                const updates = {
+                                                    full_name: profileData.name,
+                                                    email: profileData.email,
+                                                    phone: profileData.phone,
+                                                    // location is not in User model directly yet (it's in residential profile probably), 
+                                                    // but we handle basic fields first.
+                                                };
+
+                                                await authApi.updateUser(updates);
+
+                                                // Update context
+                                                setUserProfile(prev => ({
+                                                    ...prev,
+                                                    name: profileData.name,
+                                                    email: profileData.email,
+                                                    phone: profileData.phone
+                                                }));
+
+                                                setEditMode(false);
+                                                // Optional: Add notification here
+                                            } catch (e) {
+                                                console.error("Error updating profile:", e);
+                                                alert("Error al guardar perfil. Intenta de nuevo.");
+                                            }
+                                        } else {
+                                            setEditMode(true);
+                                        }
+                                    }}
                                 >
                                     {editMode ? 'Guardar' : 'Editar Perfil'}
                                 </Button>
@@ -255,6 +313,47 @@ const UserProfile = () => {
                         </div>
                     </Card>
 
+
+
+                    {/* Residential Data (If applicable) */}
+                    {
+                        userProfile.type === 'residential' && (
+                            <Card className="p-6">
+                                <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                                    <Leaf className="text-primary" size={20} />
+                                    Datos del Hogar
+                                </h2>
+
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Estrato</span>
+                                        <span className="text-sm font-bold text-slate-800 dark:text-white">
+                                            {userProfile.residential_profile?.stratum || 'N/A'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Ocupantes</span>
+                                        <span className="text-sm font-bold text-slate-800 dark:text-white">
+                                            {userProfile.residential_profile?.occupants || 1} Personas
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Tipo de Vivienda</span>
+                                        <span className="text-sm font-bold text-slate-800 dark:text-white capitalize">
+                                            {userProfile.residential_profile?.house_type || 'Apartamento'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Fuente de Energía</span>
+                                        <span className="text-sm font-bold text-slate-800 dark:text-white capitalize">
+                                            {userProfile.residential_profile?.energy_source || 'Red Eléctrica'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </Card>
+                        )
+                    }
+
                     {/* Preferences */}
                     <Card className="p-6">
                         <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
@@ -321,6 +420,28 @@ const UserProfile = () => {
                                         label="Tips de ahorro"
                                         enabled={notifications.tips}
                                         onChange={(v) => setNotifications({ ...notifications, tips: v })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Feature Flags */}
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+                                    Configuración de Panel
+                                </label>
+                                <div className="space-y-3">
+                                    <ToggleSwitch
+                                        label="Mostrar Análisis Económico"
+                                        description="Habilita la pestaña de análisis detallado de costos y tendencias."
+                                        enabled={userProfile.config?.show_financial_analysis ?? true}
+                                        onChange={(v) => {
+                                            setUserProfile({
+                                                config: {
+                                                    ...userProfile.config,
+                                                    show_financial_analysis: v
+                                                }
+                                            });
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -394,9 +515,9 @@ const UserProfile = () => {
                             </button>
                         </div>
                     </Card>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 };
 

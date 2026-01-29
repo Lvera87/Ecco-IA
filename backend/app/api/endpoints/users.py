@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload  # <--- Fundamental para cargar relacion
 
 from app.db.session import get_async_session
 from app.models.user import User as UserModel
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.core.security import get_password_hash, get_current_user
 
 router = APIRouter(tags=["users"])
@@ -40,6 +40,34 @@ async def get_my_user(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
     return user
+
+
+@router.put("/me", response_model=UserRead)
+async def update_user_me(
+    user_in: UserUpdate,
+    db: AsyncSession = Depends(get_async_session),
+    current_user: UserModel = Depends(get_current_user)
+) -> Any:
+    """Actualiza datos del usuario logueado."""
+    if user_in.full_name is not None:
+        current_user.full_name = user_in.full_name
+    if user_in.email is not None:
+        current_user.email = user_in.email
+    if user_in.phone is not None:
+        current_user.phone = user_in.phone
+    if user_in.username is not None:
+        current_user.username = user_in.username
+
+    db.add(current_user)
+    try:
+        await db.commit()
+        await db.refresh(current_user)
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Username o Email ya existen.")
+
+    # Re-fetch with relations to ensure consistent response structure
+    return await get_my_user(db, current_user)
 
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)

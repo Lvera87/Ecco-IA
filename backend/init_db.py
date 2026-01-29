@@ -4,7 +4,7 @@ from app.db.base import Base
 from app.db.session import get_async_engine
 
 # Import all models so metadata is populated
-from app.models import user, industrial_asset, industrial_settings, residential, roi_scenario, gamification  # noqa
+from app.models import user, industrial_asset, industrial_settings, residential, roi_scenario, gamification, document  # noqa
 
 async def init_db():
     engine = get_async_engine()

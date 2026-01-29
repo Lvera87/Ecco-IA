@@ -29,6 +29,7 @@ class GamificationProfileRead(BaseModel):
     total_xp: int
     current_level: int
     eco_points: int
+    streak: int = 0
     
     model_config = ConfigDict(from_attributes=True)
 

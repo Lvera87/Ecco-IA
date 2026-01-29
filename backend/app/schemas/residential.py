@@ -51,9 +51,10 @@ class ResidentialAsset(ResidentialAssetBase):
 class ConsumptionReadingBase(BaseModel):
     reading_value: float
     reading_type: str = "manual"
+    cost: Optional[float] = None
 
 class ConsumptionReadingCreate(ConsumptionReadingBase):
-    pass
+    date: Optional[datetime] = None
 
 class ConsumptionReading(ConsumptionReadingBase):
     id: int
