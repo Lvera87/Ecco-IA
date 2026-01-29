@@ -32,6 +32,7 @@ class UserBase(BaseModel):
     email: str
     full_name: Optional[str] = None
     user_type: Optional[str] = "residential"
+    phone: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -45,6 +46,10 @@ class UserRead(UserBase):
     # IMPORTANTÍSIMO: Agregamos los perfiles para que viajen al Frontend
     residential_profile: Optional[ResidentialProfileRead] = None
     industrial_settings: Optional[IndustrialSettingsRead] = None
+    # Use generic Any or forward ref to avoid circular if GamificationProfileRead is complex to import here
+    # For now, let's try to import it inside the file or use a Dict if simple validation is enough.
+    # Ideally: from app.schemas.gamification import GamificationProfileRead
+    gamification_profile: Optional[Any] = None
 
 
 class User(UserRead):

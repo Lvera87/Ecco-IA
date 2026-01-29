@@ -11,7 +11,7 @@ const ICON_MAP = {
     TrendingUp: Trophy
 };
 
-const MissionWidget = ({ missions, onComplete, loading }) => {
+const MissionWidget = ({ missions, onComplete, onInspect, loading }) => {
     if (loading) {
         return <div className="animate-pulse bg-white/5 h-64 rounded-2xl"></div>;
     }
@@ -74,10 +74,16 @@ const MissionWidget = ({ missions, onComplete, loading }) => {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => onComplete(missionData.id)}
+                                            onClick={() => {
+                                                if (missionData.related_appliance_type && onInspect) {
+                                                    onInspect(missionData);
+                                                } else {
+                                                    onComplete(missionData.id);
+                                                }
+                                            }}
                                             className="text-[10px] h-7 px-3 py-0 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                                         >
-                                            Completar <ArrowRight className="w-3 h-3 ml-1" />
+                                            {missionData.related_appliance_type ? 'Ver Equipo' : 'Completar'} <ArrowRight className="w-3 h-3 ml-1" />
                                         </Button>
                                     </div>
                                 </div>

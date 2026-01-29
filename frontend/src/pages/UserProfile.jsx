@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     User, Mail, Phone, MapPin, Edit2, Camera, Shield, Bell,
     Palette, Globe, LogOut, ChevronRight, Moon, Sun, Check,
@@ -42,15 +42,30 @@ const UserProfile = () => {
     const navigate = useNavigate();
     const { userProfile } = useUser();
     const { theme, setTheme } = useUI();
-    // Default fallback values until goals are properly implemented in backend
-    const goals = { monthlyBudget: 150000, co2Reduction: 15 };
+
+    // Sync state with Context (DB Data)
+    useEffect(() => {
+        if (userProfile.name) {
+            setProfileData({
+                name: userProfile.name || '',
+                email: userProfile.email || '',
+                phone: userProfile.phone || '',
+                location: userProfile.location || '',
+            });
+        }
+    }, [userProfile]);
+
+    // Fallback/Derived values
+    const efficiency = userProfile.config?.efficiency_percentage || 94; // TODO: Calculate real
+    const budget = userProfile.config?.target_monthly_bill || 150000;
+    const co2 = 15; // TODO: Calculate real
 
     const [editMode, setEditMode] = useState(false);
     const [profileData, setProfileData] = useState({
-        name: 'Carlos Rodríguez',
-        email: 'carlos.rodriguez@email.com',
-        phone: '+57 310 555 1234',
-        location: 'Medellín, Colombia',
+        name: '',
+        email: '',
+        phone: '',
+        location: '',
     });
 
     const [notifications, setNotifications] = useState({
@@ -145,10 +160,10 @@ const UserProfile = () => {
 
                     {/* Stats */}
                     <div className="relative z-10 grid grid-cols-4 gap-6 mt-8 pt-8 border-t border-slate-200 dark:border-slate-700">
-                        <StatBadge icon={Zap} value="94%" label="Eficiencia" color="bg-blue-500" />
-                        <StatBadge icon={Target} value={`$${(goals.monthlyBudget / 1000).toFixed(0)}K`} label="Presupuesto" color="bg-emerald-500" />
-                        <StatBadge icon={Leaf} value={`${goals.co2Reduction}%`} label="Reducción CO₂" color="bg-teal-500" />
-                        <StatBadge icon={Trophy} value={userProfile.streak} label="Días racha" color="bg-amber-500" />
+                        <StatBadge icon={Zap} value={`${efficiency}%`} label="Eficiencia" color="bg-blue-500" />
+                        <StatBadge icon={Target} value={`$${(budget / 1000).toFixed(0)}K`} label="Presupuesto" color="bg-emerald-500" />
+                        <StatBadge icon={Leaf} value={`${co2}%`} label="Reducción CO₂" color="bg-teal-500" />
+                        <StatBadge icon={Trophy} value={userProfile.streak || 0} label="Días racha" color="bg-amber-500" />
                     </div>
                 </Card>
 

@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Plus, Award } from 'lucide-react';
+import { User, Plus, Award, Menu } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import Button from './ui/Button';
 import NotificationsPanel from './ui/NotificationsPanel';
 import AddApplianceModal from './ui/AddApplianceModal';
 
-const ResidentialHeader = () => {
+const ResidentialHeader = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const { userProfile } = useUser();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   return (
-    <header className="h-20 bg-slate-950 border-b border-slate-900 px-8 flex items-center justify-between shrink-0 relative z-40">
-      <div className="flex items-center gap-6">
+    <header className="h-20 bg-slate-950 border-b border-slate-900 px-4 md:px-8 flex items-center justify-between shrink-0 relative z-40">
+      <div className="flex items-center gap-4 md:gap-6">
+        <button
+          onClick={onMenuClick}
+          className="p-2 -ml-2 text-slate-400 hover:text-white xl:hidden"
+        >
+          <Menu size={24} />
+        </button>
+
         <div className="flex items-center gap-4">
           <div
             className="relative cursor-pointer"
@@ -26,15 +33,15 @@ const ResidentialHeader = () => {
               {userProfile.level}
             </div>
           </div>
-          <div>
+          <div className="flex flex-col md:block min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="font-display font-bold text-white tracking-tight">{userProfile.name}</h2>
+              <h2 className="font-display font-bold text-white tracking-tight text-sm md:text-base truncate max-w-[120px] md:max-w-none">{userProfile.name}</h2>
               <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-lg uppercase tracking-wider">
                 <Award size={10} />
-                Nivel {userProfile.level}
+                <span className="hidden md:inline">Nivel</span> {userProfile.level}
               </div>
             </div>
-            <div className="flex items-center gap-3 mt-1.5">
+            <div className="hidden md:flex items-center gap-3 mt-1.5">
               <div className="w-32 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
                 <div
                   className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] transition-all duration-300"
@@ -47,14 +54,15 @@ const ResidentialHeader = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+
+      <div className="flex items-center gap-2 md:gap-4">
         <Button
           size="sm"
-          className="bg-emerald-600 hover:bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-500/20"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-500/20 px-3 md:px-4"
           onClick={() => setIsAddModalOpen(true)}
         >
-          <Plus size={18} className="mr-2" />
-          <span className="text-sm font-bold">Añadir Dispositivo</span>
+          <Plus size={18} className="md:mr-2" />
+          <span className="hidden md:inline text-sm font-bold">Añadir Dispositivo</span>
         </Button>
 
         <NotificationsPanel />
@@ -65,7 +73,7 @@ const ResidentialHeader = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
-    </header>
+    </header >
   );
 };
 

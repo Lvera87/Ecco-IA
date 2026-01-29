@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import List
 import numpy as np
 import json
+from datetime import datetime
 
 # --- 1. IMPORTS NUEVOS PARA BASE DE DATOS ---
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,7 +129,8 @@ async def predict_sector(
                 "diferencia_porcentaje": comparacion_estrato["diferencia_porcentaje"],
                 "es_eficiente": comparacion_estrato["es_eficiente"],
                 "mensaje": comparacion_estrato["mensaje"]
-            }
+            },
+            "fecha_calculo": datetime.now().isoformat()
         }
 
         # --- 3. GUARDADO EN BASE DE DATOS ---

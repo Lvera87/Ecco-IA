@@ -146,14 +146,32 @@ export const useEnergyMath = () => {
 
     // Totals from appliances
     const totals = useMemo(() => {
-        const totalNominalKwh = appliances.reduce((sum, app) => sum + (app.consumption || 0), 0);
-        const totalMonthlyCost = enrichedAppliances.reduce((sum, app) => sum + (app.monthlyCost || 0), 0);
+        const totalNominalKwh = appliances.reduce((sum, app) => sum + (app.status ? (app.consumption || 0) : 0), 0);
+        const totalMonthlyCost = enrichedAppliances.reduce((sum, app) => sum + (app.status ? (app.monthlyCost || 0) : 0), 0);
         return { totalNominalKwh, totalMonthlyCost };
     }, [appliances, enrichedAppliances]);
+
+    // Dynamic calculations based on active inventory
+    const dynamicCo2 = (totals.totalNominalKwh * 30) * CO2_FACTOR;
+    const dynamicTrees = Math.round(dynamicCo2 / 20);
 
     return {
         ...calculations,
         ...totals,
+        // Override projected metrics with dynamic totals to reflect toggle changes immediately
+        projectedBill: calculations.projectedBill > 0 && dashboardInsights?.metrics?.projected_bill
+            ? calculations.projectedBill
+            : totals.totalMonthlyCost,
+
+        // Dynamic Environmental Impact
+        co2Footprint: calculations.co2Footprint > 0 && dashboardInsights?.metrics?.co2_footprint
+            ? calculations.co2Footprint
+            : dynamicCo2,
+
+        treesEquivalent: calculations.treesEquivalent > 0 && dashboardInsights?.metrics?.trees_equivalent
+            ? calculations.treesEquivalent
+            : dynamicTrees,
+
         enrichedAppliances,
         formatMoney,
         kwhPrice,

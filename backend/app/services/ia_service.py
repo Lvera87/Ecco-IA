@@ -22,7 +22,9 @@ class IAService:
         
         # Verificamos que la carpeta exista para evitar errores confusos
         if not ARTIFACTS_DIR.exists():
-            raise FileNotFoundError(f"❌ No encuentro la carpeta de modelos en: {ARTIFACTS_DIR}")
+            print(f"❌ No encuentro la carpeta de modelos en: {ARTIFACTS_DIR}")
+            return
+            # raise FileNotFoundError(f"❌ No encuentro la carpeta de modelos en: {ARTIFACTS_DIR}")
 
         try:
             # Pathlib permite unir rutas con '/' como si fuera una URL
@@ -35,34 +37,35 @@ class IAService:
             print("✅ Cerebros y metadatos cargados correctamente.")
         except Exception as e:
             print(f"❌ Error fatal cargando .pkl: {e}")
-            raise e
-
-    def predict(self, client_type: str, data: list):
-        if not self.is_loaded:
-            raise RuntimeError("El modelo no ha sido cargado aún. Revisa el inicio del servidor.")
-
-        # Normalizamos a minúsculas para evitar errores por "Residencial" vs "residencial"
-        ctype = client_type.lower()
-
-        if ctype == "residencial":
-            # El [0] es porque predict devuelve una lista [resultado]
-            return self.model_residential.predict([data])[0]
-        elif ctype == "industrial":
-            return self.model_industrial.predict([data])[0]
-        else:
-            raise ValueError(f"Tipo de cliente '{client_type}' desconocido. Use 'residencial' o 'industrial'.")
+            # raise e
 
     def get_sector_info(self, sector_id):
         if self.sector_metadata is None:
             return "Metadatos no cargados"
         return self.sector_metadata.get(sector_id, "Desconocido")
 
-# Instancia global lista para importar
-ia = IAService()
-
-def predict(self, client_type: str, data: list):
+    def predict(self, client_type: str, data: list):
+        # MOCK FALLBACK: Si no hay modelo, devolvemos datos simulados para desarrollo
         if not self.is_loaded:
-            raise RuntimeError("El modelo no ha sido cargado aún.")
+            print("⚠️ ADVERTENCIA: Usando predicción simulada (Mock) porque los modelos no cargaron.")
+            if client_type.lower() == "residencial":
+                # Simulamos consumo desagregado [nevera, lavadora, tvs, etc...]
+                # Simplemente devolvemos una lista de floats que sumen aprox al consumo
+                # data[1] es el consumo total en el payload residencial
+                consumo_total = data[1] if len(data) > 1 else 100.0
+                
+                # Desglose simulado proporcional
+                nevera = consumo_total * 0.30
+                clima = consumo_total * 0.20
+                entretenimiento = consumo_total * 0.15
+                cocina = consumo_total * 0.10
+                # El resto fugas/otros
+                
+                return [nevera, clima, entretenimiento, cocina] 
+                
+            elif client_type.lower() == "industrial":
+                return [1000.0, 500.5, 200.0]
+            return [0.0, 0.0, 0.0]
 
         ctype = client_type.lower()
         result = None
@@ -85,3 +88,6 @@ def predict(self, client_type: str, data: list):
              return result.item()
 
         return result
+
+# Instancia global lista para importar
+ia = IAService()

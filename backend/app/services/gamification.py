@@ -105,10 +105,10 @@ class GamificationService:
             
         initial_missions = [
             Mission(title="Eco-Onboarding", description="Completa tu perfil residencial o industrial", xp_reward=200, category="global", icon="UserCheck"),
-            Mission(title="Caza de Vampiros", description="Identifica 3 equipos con alto consumo standby", xp_reward=150, category="residential", icon="Zap"),
+            Mission(title="Caza de Vampiros", description="Identifica 3 equipos con alto consumo standby", xp_reward=150, category="residential", icon="Zap", related_appliance_type="wasted_energy"),
             Mission(title="Maestro de la Eficiencia", description="Mantén tu eficiencia industrial sobre el 90% una semana", xp_reward=500, category="industrial", icon="Trophy"),
             Mission(title="Primer ROI", description="Calcula un escenario de inversión para un motor", xp_reward=300, category="industrial", icon="TrendingUp"),
-            Mission(title="Hogar Consciente", description="Registra todos los equipos de tu cocina", xp_reward=100, category="residential", icon="Home"),
+            Mission(title="Hogar Consciente", description="Registra todos los equipos de tu cocina", xp_reward=100, category="residential", icon="Home", related_appliance_type="fridge"),
         ]
         db.add_all(initial_missions)
         await db.commit()

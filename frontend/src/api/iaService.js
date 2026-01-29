@@ -1,7 +1,9 @@
 // src/api/iaService.js
 
-// Construimos la URL base
-const API_URL = `${import.meta.env.VITE_API_HOST}${import.meta.env.VITE_API_BASE_PATH}/${import.meta.env.VITE_API_VERSION}`;
+// Construimos la URL base usando la configuración centralizada
+import { API_BASE_URL } from '../config/env.js';
+
+const API_URL = API_BASE_URL;
 
 export const iaApi = {
     predict: async (payload) => {

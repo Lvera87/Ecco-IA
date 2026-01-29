@@ -11,6 +11,7 @@ class User(Base):
     full_name = Column(String(120), nullable=True)
     hashed_password = Column(String(128), nullable=False)
     user_type = Column(String(20), default="residential") # residential, industrial
+    phone = Column(String(50), nullable=True)
 
     # Relaciones
     gamification_profile = relationship("GamificationProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")

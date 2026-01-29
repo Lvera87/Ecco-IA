@@ -10,6 +10,7 @@ const StatCard = ({
     color = 'primary',
     trend,
     trendValue,
+    rightContent,
     tooltip,
     pulse = false,
     className = "",
@@ -34,23 +35,28 @@ const StatCard = ({
             </div>
 
             <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-1.5 mb-0.5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{title}</span>
-                    {trend && (
-                        <div className={`flex items-center gap-0.5 text-[10px] font-bold ${trend === 'down' ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {trendValue}%
-                        </div>
-                    )}
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-1 mb-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-tight">
+                        {title}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        {rightContent}
+                        {trend && (
+                            <div className={`flex items-center gap-0.5 text-[10px] font-bold ${trend === 'down' ? 'text-emerald-500' : 'text-red-500'}`}>
+                                {trendValue}%
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="flex items-baseline gap-1.5 min-h-[1.5rem] mt-1">
+                <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-h-[1.5rem] mt-1">
                     {value && (
                         <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
                             {value}
                         </span>
                     )}
                     {unit && (
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight break-words max-w-full">
                             {unit}
                         </span>
                     )}

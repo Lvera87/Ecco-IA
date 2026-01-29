@@ -102,6 +102,14 @@ export const authApi = {
      */
     isAuthenticated() {
         return !!this.getAccessToken();
+    },
+
+    /**
+     * Obtiene info completa del usuario (Profile + Phone + Gamification)
+     */
+    async getMe() {
+        const response = await client.get('/users/me');
+        return response.data;
     }
 };
 

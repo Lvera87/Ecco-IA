@@ -1,11 +1,17 @@
 import { Link } from 'react-router-dom';
-import { Building2, Download, Bell, Settings } from 'lucide-react';
+import { Building2, Download, Bell, Settings, Menu } from 'lucide-react';
 import Button from './ui/Button';
 
-const IndustrialHeader = () => {
+const IndustrialHeader = ({ onMenuClick }) => {
     return (
-        <header className="h-20 bg-slate-950 border-b border-slate-900 px-8 flex items-center justify-between shrink-0 relative z-10">
-            <div className="flex items-center gap-6">
+        <header className="h-20 bg-slate-950 border-b border-slate-900 px-4 md:px-8 flex items-center justify-between shrink-0 relative z-10">
+            <div className="flex items-center gap-4 md:gap-6">
+                <button
+                    onClick={onMenuClick}
+                    className="p-2 -ml-2 text-slate-400 hover:text-white xl:hidden"
+                >
+                    <Menu size={24} />
+                </button>
                 <div className="flex items-center gap-4">
                     <div className="size-12 rounded-2xl bg-slate-900 flex items-center justify-center border border-slate-800 shadow-inner">
                         <Building2 size={24} className="text-blue-500" />

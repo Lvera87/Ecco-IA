@@ -15,6 +15,7 @@ class GamificationProfile(Base):
     total_xp = Column(Integer, default=0)
     current_level = Column(Integer, default=1)
     eco_points = Column(Integer, default=0) # Moneda para canjear por beneficios reales
+    streak = Column(Integer, default=0) # Días de racha
     
     # Timestamps
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -37,6 +38,7 @@ class Mission(Base):
     icon = Column(String(50)) # Lucide icon name
     category = Column(String(50)) # residential, industrial, global
     mission_type = Column(String(50), default="achievement") # survey, calculation, action
+    related_appliance_type = Column(String(50), nullable=True) # e.g. "fridge", "ac", "washing_machine"
 
 class UserMission(Base):
     """

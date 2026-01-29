@@ -8,7 +8,21 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 // Micro-Contexts Architecture
 import { useUser } from '../context/UserContext';
-import { iconMap } from '../context/EnergyContext';
+import { useEnergy, iconMap } from '../context/EnergyContext';
+import ApplianceDetailModal from '../components/ui/ApplianceDetailModal';
+
+// Mapeo de imágenes ilustrativas (Duplicado de Dashboard por seguridad - Idealmente mover a constantes)
+const APPLIANCE_IMAGES = {
+  Refrigerator: "/fridge.jpeg",
+  Tv: "/tv.webp",
+  WashingMachine: "https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?q=80&w=300&auto=format&fit=crop",
+  Microwave: "https://images.unsplash.com/photo-1585659722983-3a675dabf194?q=80&w=300&auto=format&fit=crop",
+  Fan: "https://images.unsplash.com/photo-1618941716939-553df5266278?q=80&w=300&auto=format&fit=crop",
+  AirVent: "https://images.unsplash.com/photo-1615893095033-d8c72836267f?q=80&w=300&auto=format&fit=crop",
+  Lightbulb: "https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=300&auto=format&fit=crop",
+  Monitor: "/computer.jpeg",
+  default: "https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=300&auto=format&fit=crop"
+};
 
 // Mission Card Component
 const MissionCard = ({ mission, onClaim, iconMap }) => {
@@ -91,9 +105,13 @@ const MissionCard = ({ mission, onClaim, iconMap }) => {
             <CheckCircle size={16} /> Completada
           </span>
         )}
-        {status === 'active' && (
+        {status === 'active' && mission.related_appliance_type ? (
+          <Button variant="ghost" size="sm" onClick={() => onClaim(mission, true)}>
+            Ver Equipo <ChevronRight size={16} className="ml-1" />
+          </Button>
+        ) : status === 'active' ? (
           <ChevronRight size={20} className="text-slate-400" />
-        )}
+        ) : null}
       </div>
     </Card>
   );
@@ -132,6 +150,50 @@ const Missions = () => {
   useEffect(() => {
     syncGamification();
   }, []);
+
+  const { appliances: activeAppliances, toggleAppliance } = useEnergy();
+  const [selectedAppliance, setSelectedAppliance] = useState(null);
+
+  const handleAction = (mission, isInspect) => {
+    if (isInspect) {
+      handleInspectMission(mission);
+    } else {
+      claimMission(mission.id);
+    }
+  };
+
+  const handleInspectMission = (mission) => {
+    if (!mission.related_appliance_type) return;
+    // We need to fetch the detailed mission object if 'mission' is just the summary, 
+    // but 'mission' prop usually has what we need based on UserContext logic.
+
+    // Note: backend 'related_appliance_type' is on the MISSION model, accessible via 'mission' prop here.
+    // But in formattedMissions (UserContext), we flattened it? 
+    // Let's check UserContext. formattedMissions copies properties but might miss 'related_appliance_type'.
+    // I should verify UserContext formatting first.
+
+    // Assuming it's passed (I will verify next).
+    const type = (mission.related_appliance_type || '').toLowerCase();
+    if (!type) {
+      // Fallback if formatting was missed, try to guess from icon or title? 
+      // Better to rely on the field.
+      return;
+    }
+
+    let targetHelper = null;
+    if (type === 'fridge') {
+      targetHelper = activeAppliances.find(a => a.icon === 'Refrigerator' || a.name.toLowerCase().includes('nevera'));
+    } else if (type === 'wasted_energy') {
+      targetHelper = activeAppliances.find(a => ['Tv', 'Monitor', 'Consolas', 'Lightbulb'].includes(a.icon));
+    } else {
+      targetHelper = activeAppliances.find(a => a.icon.toLowerCase() === type || a.name.toLowerCase().includes(type));
+    }
+
+    if (targetHelper) {
+      const bgImage = APPLIANCE_IMAGES[targetHelper.icon] || APPLIANCE_IMAGES.default;
+      setSelectedAppliance({ ...targetHelper, bgImage });
+    }
+  };
 
   const achievements = [
     { id: 1, name: 'Primer Paso', icon: Star, unlocked: true, rarity: 'common' },
@@ -267,13 +329,56 @@ const Missions = () => {
               <MissionCard
                 key={mission.id}
                 mission={mission}
-                onClaim={() => claimMission(mission.id)}
+                onClaim={(m, isInspect) => handleAction(m || mission, isInspect)}
                 iconMap={iconMap}
               />
             ))}
           </div>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      <ApplianceDetailModal
+        isOpen={!!selectedAppliance}
+        onClose={() => setSelectedAppliance(null)}
+        appliance={selectedAppliance}
+        onToggle={async (app) => {
+          // 1. Execute Toggle
+          await toggleAppliance(app.id);
+
+          // 2. Update Modal State
+          const newStatus = !app.status;
+          setSelectedAppliance(prev => ({ ...prev, status: newStatus }));
+
+          // 3. Check Mission Completion (Auto-Claim)
+          // Logic: If turning OFF a device (status -> false) and matches Vampire Hunt criteria
+          if (newStatus === false) {
+            const vampireMission = missions.find(m =>
+              m.status === 'active' &&
+              m.related_appliance_type === 'wasted_energy' &&
+              ['Tv', 'Monitor', 'Consolas', 'Lightbulb', 'Fan', 'Microwave'].includes(app.icon)
+            );
+
+            if (vampireMission) {
+              await claimMission(vampireMission.id);
+            }
+          }
+
+          // Logic: If turning ON/Checking (Hogar Consciente - Fridge)
+          // Tricky: usually just "Inspecting" is enough for some, but let's say "Interacting" counts.
+          if (newStatus === true || newStatus === false) {
+            const fridgeMission = missions.find(m =>
+              m.status === 'active' &&
+              m.related_appliance_type === 'fridge' &&
+              (app.icon === 'Refrigerator' || app.name.toLowerCase().includes('nevera'))
+            );
+
+            if (fridgeMission) {
+              await claimMission(fridgeMission.id);
+            }
+          }
+        }}
+      />
     </div>
   );
 };

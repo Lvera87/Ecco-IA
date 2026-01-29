@@ -10,6 +10,7 @@ class MissionBase(BaseModel):
     icon: Optional[str] = "Zap"
     category: str
     mission_type: str = "achievement"
+    related_appliance_type: Optional[str] = None
 
 class MissionRead(MissionBase):
     id: int
@@ -36,3 +37,7 @@ class UserGamificationStats(BaseModel):
     active_missions: List[UserMissionRead]
     completed_count: int
     next_level_xp: int # XP necesario para el siguiente nivel
+
+class MissionCompletionResponse(BaseModel):
+    mission_result: UserMissionRead
+    new_stats: UserGamificationStats

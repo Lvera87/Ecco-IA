@@ -176,7 +176,7 @@ const ResidentialConfig = () => {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 font-body">
 
-            <div className="max-w-3xl w-full space-y-8">
+            <div className="max-w-lg md:max-w-3xl w-full space-y-8">
 
                 {/* Encabezado */}
                 <div className="text-center space-y-2">

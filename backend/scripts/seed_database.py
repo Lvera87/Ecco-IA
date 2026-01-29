@@ -18,10 +18,8 @@ async def reset_and_seed():
     
     # Drop all tables with CASCADE to handle dependencies
     async with async_engine.begin() as conn:
-        # Use raw SQL to drop all with CASCADE for PostgreSQL
-        await conn.execute(text("DROP SCHEMA public CASCADE"))
-        await conn.execute(text("CREATE SCHEMA public"))
-        await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
+        # SQLite compatible reset
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     
     print("✅ Tablas recreadas")
@@ -38,8 +36,9 @@ async def reset_and_seed():
             home_user = User(
                 username="casa_verde",
                 email="familia@ecco-ia.com",
-                full_name="Familia García Martínez",
-                hashed_password=get_password_hash("hogar123")
+                full_name="Cristian David",
+                hashed_password=get_password_hash("hogar123"),
+                phone="+57 310 555 1234"
             )
             db.add(home_user)
             
@@ -48,7 +47,8 @@ async def reset_and_seed():
                 username="metalurgica_norte",
                 email="operaciones@metalurgicanorte.com",
                 full_name="Metalúrgica Norte S.A.S",
-                hashed_password=get_password_hash("industria123")
+                hashed_password=get_password_hash("industria123"),
+                phone="+57 320 888 9999"
             )
             db.add(industrial_user)
             
@@ -204,14 +204,14 @@ async def reset_and_seed():
             missions = [
                 Mission(title="Eco-Onboarding", description="Completa tu perfil residencial o industrial", 
                         xp_reward=200, point_reward=50, category="global", icon="UserCheck", mission_type="achievement"),
-                Mission(title="Caza de Vampiros", description="Identifica 3 equipos con alto consumo standby",
-                        xp_reward=150, point_reward=30, category="residential", icon="Zap", mission_type="action"),
-                Mission(title="Maestro de la Eficiencia", description="Mantén tu eficiencia industrial sobre el 90% una semana",
-                        xp_reward=500, point_reward=100, category="industrial", icon="Trophy", mission_type="achievement"),
-                Mission(title="Primer ROI", description="Calcula un escenario de inversión para un motor",
-                        xp_reward=300, point_reward=60, category="industrial", icon="TrendingUp", mission_type="calculation"),
-                Mission(title="Hogar Consciente", description="Registra todos los equipos de tu cocina",
-                        xp_reward=100, point_reward=20, category="residential", icon="Home", mission_type="survey"),
+                Mission(title="Caza de Vampiros", description="Identifica 3 equipos con alto consumo standby", 
+                       xp_reward=150, category="residential", icon="Zap", related_appliance_type="wasted_energy"),
+                Mission(title="Maestro de la Eficiencia", description="Mantén tu eficiencia industrial sobre el 90% una semana", 
+                       xp_reward=500, category="industrial", icon="Trophy"),
+                Mission(title="Primer ROI", description="Calcula un escenario de inversión para un motor", 
+                       xp_reward=300, category="industrial", icon="TrendingUp"),
+                Mission(title="Hogar Consciente", description="Registra todos los equipos de tu cocina", 
+                       xp_reward=100, category="residential", icon="Home", related_appliance_type="fridge", mission_type="survey"),
                 Mission(title="Auditor Novato", description="Revisa el análisis de IA de tu consumo",
                         xp_reward=75, point_reward=15, category="global", icon="Brain", mission_type="action"),
             ]
@@ -228,11 +228,11 @@ async def reset_and_seed():
             print("⭐ Asignando progreso de gamificación...")
             
             # Perfil del hogar - nivel 2
-            home_gp = GamificationProfile(user_id=home_user.id, total_xp=350, current_level=2, eco_points=85)
+            home_gp = GamificationProfile(user_id=home_user.id, total_xp=350, current_level=2, eco_points=85, streak=5)
             db.add(home_gp)
             
             # Perfil industrial - nivel 3
-            industrial_gp = GamificationProfile(user_id=industrial_user.id, total_xp=720, current_level=3, eco_points=150)
+            industrial_gp = GamificationProfile(user_id=industrial_user.id, total_xp=720, current_level=3, eco_points=150, streak=12)
             db.add(industrial_gp)
             
             # Asignar misiones activas

@@ -23,6 +23,20 @@ import { useUser } from '../context/UserContext';
 import { useEnergy, iconMap } from '../context/EnergyContext';
 import { useUI } from '../context/UIContext';
 import { useEnergyMath } from '../hooks/useEnergyMath';
+import ApplianceDetailModal from '../components/ui/ApplianceDetailModal';
+
+// Mapeo de imágenes ilustrativas (Duplicado de Dashboard para consistencia)
+const APPLIANCE_IMAGES = {
+    Refrigerator: "/fridge.jpeg",
+    Tv: "/tv.webp",
+    WashingMachine: "https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?q=80&w=300&auto=format&fit=crop",
+    Microwave: "https://images.unsplash.com/photo-1585659722983-3a675dabf194?q=80&w=300&auto=format&fit=crop",
+    Fan: "https://images.unsplash.com/photo-1618941716939-553df5266278?q=80&w=300&auto=format&fit=crop",
+    AirVent: "https://images.unsplash.com/photo-1615893095033-d8c72836267f?q=80&w=300&auto=format&fit=crop", // AC
+    Lightbulb: "https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=300&auto=format&fit=crop",
+    Monitor: "/computer.jpeg",
+    default: "https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=300&auto=format&fit=crop"
+};
 
 // Custom Tooltip for Charts
 const CustomTooltip = ({ active, payload, label }) => {
@@ -77,6 +91,7 @@ const EnergyManagement = () => {
     const [activeTab, setActiveTab] = useState('inventory'); // 'finances' or 'inventory'
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState('all');
+    const [selectedAppliance, setSelectedAppliance] = useState(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [applianceToDelete, setApplianceToDelete] = useState(null);
     const [isReady, setIsReady] = useState(false);
@@ -96,7 +111,7 @@ const EnergyManagement = () => {
     const {
         formatMoney, totalMonthlyCost, projectedBill,
         vampireMoneyLost, hasData, enrichedAppliances,
-        totalNominalKwh, loadDist
+        totalNominalKwh, loadDist, kwhPrice
     } = useEnergyMath();
 
     useEffect(() => {
@@ -286,7 +301,7 @@ const EnergyManagement = () => {
                                             <div className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
                                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.name}</span>
                                         </div>
-                                        <span className="text-sm font-black text-slate-800 dark:text-white">{Math.round((item.value / projectedBill) * 100) || 25}%</span>
+                                        <span className="text-sm font-black text-slate-800 dark:text-white">{formatMoney(item.value * kwhPrice)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -365,14 +380,32 @@ const EnergyManagement = () => {
                                             }
                                             acc[key].quantity += 1;
                                             acc[key].ids.push(app.id);
-                                            acc[key].totalMonthlyCost += app.monthlyCost;
-                                            // Estimado de consumo mensual individual para sumar
-                                            acc[key].totalConsumption += (app.monthlyCost / 850);
+
+                                            // Only sum cost/consumption if the device is active
+                                            if (app.status) {
+                                                acc[key].totalMonthlyCost += app.monthlyCost;
+                                                acc[key].totalConsumption += (app.monthlyCost / 850);
+                                            }
+
                                             return acc;
                                         }, {})).map((group) => {
                                             const AppIcon = iconMap?.[group.icon] || Wind;
+                                            const bgImage = APPLIANCE_IMAGES[group.icon] || APPLIANCE_IMAGES.default;
+
+                                            // Preparamos el objeto para el modal (usando el primer item del grupo como base + datos agregados)
+                                            const modalData = {
+                                                ...group,
+                                                bgImage,
+                                                // Aseguramos que el status refleje si alguno del grupo está encendido o el estado general
+                                                status: group.status
+                                            };
+
                                             return (
-                                                <tr key={group.ids[0]} className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                <tr
+                                                    key={group.ids[0]}
+                                                    onClick={() => setSelectedAppliance(modalData)}
+                                                    className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                                                >
                                                     <td className="px-6 py-5">
                                                         <div className="flex items-center gap-4">
                                                             <div className={`size-10 rounded-xl flex items-center justify-center ${group.warning ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
@@ -392,7 +425,7 @@ const EnergyManagement = () => {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-5">
-                                                        <div className="flex justify-center">
+                                                        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
                                                             <button
                                                                 onClick={() => group.ids.forEach(id => handleToggle(id))}
                                                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${group.status ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`}
@@ -410,7 +443,10 @@ const EnergyManagement = () => {
                                                     </td>
                                                     <td className="px-6 py-5 text-right">
                                                         <button
-                                                            onClick={() => setApplianceToDelete({ id: group.ids[0], name: group.name, isGroup: group.quantity > 1 })}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setApplianceToDelete({ id: group.ids[0], name: group.name, isGroup: group.quantity > 1 });
+                                                            }}
                                                             className="p-2 hover:bg-red-50 text-red-300 hover:text-red-500 rounded-lg transition-colors"
                                                             title="Eliminar uno"
                                                         >
@@ -452,6 +488,22 @@ const EnergyManagement = () => {
                     onConfirm={() => handleDelete(applianceToDelete.id)}
                     title="Eliminar del Inventario"
                     message={`Si eliminas "${applianceToDelete?.name}", se recalculará tu costo operativo inmediatamente.`}
+                />
+
+                {/* Detail Modal */}
+                <ApplianceDetailModal
+                    isOpen={!!selectedAppliance}
+                    onClose={() => setSelectedAppliance(null)}
+                    appliance={selectedAppliance}
+                    onToggle={(app) => {
+                        if (app.ids && app.ids.length > 0) {
+                            app.ids.forEach(id => handleToggle(id));
+                        } else {
+                            handleToggle(app.id);
+                        }
+                        // Update local modal state for immediate feedback
+                        setSelectedAppliance(prev => ({ ...prev, status: !prev.status }));
+                    }}
                 />
 
             </div>

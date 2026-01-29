@@ -36,15 +36,14 @@ async def get_user_stats(
         "next_level_xp": next_level_xp
     }
 
-@router.post("/missions/{mission_id}/complete", response_model=UserMissionRead)
+@router.post("/missions/{mission_id}/complete", response_model=UserGamificationStats)
 async def complete_mission(
     mission_id: int,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_async_session)
 ):
     """
-    Marca una misión como completada. 
-    En una app real, esto sería llamado automáticamente por otros servicios cuando se cumple una condición.
+    Marca una misión como completada y devuelve los stats actualizados.
     """
     user_mission = await gamification_service.complete_mission(db, current_user.id, mission_id)
     if not user_mission:
@@ -52,7 +51,22 @@ async def complete_mission(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La misión no pudo ser completada o ya lo está."
         )
-    return user_mission
+    
+    # Recalcular stats post-completion para feedback inmediato
+    # Reutilizamos la lógica de get_user_stats pero optimizada
+    missions = await gamification_service.get_user_missions(db, current_user.id)
+    profile = await gamification_service.get_or_create_profile(db, current_user.id)
+    
+    next_level_xp = (profile.current_level ** 2) * 100
+    completed_missions = [m for m in missions if m.status == "completed"]
+    active_missions = [m for m in missions if m.status == "pending"]
+    
+    return {
+        "profile": profile,
+        "active_missions": active_missions,
+        "completed_count": len(completed_missions),
+        "next_level_xp": next_level_xp
+    }
 
 @router.post("/seed", status_code=status.HTTP_201_CREATED)
 async def seed_missions(db: AsyncSession = Depends(get_async_session)):

@@ -28,25 +28,49 @@ export const UserProvider = ({ children }) => {
         localStorage.setItem('eccoIA_userProfile', JSON.stringify(userProfile));
     }, [userProfile]);
 
+    // Sincronización automática del cache local
+    useEffect(() => {
+        localStorage.setItem('eccoIA_userProfile', JSON.stringify(userProfile));
+    }, [userProfile]);
+
     /**
      * Sincroniza el perfil residencial incluyendo la gráfica de IA
      */
+    /**
+     * Sincroniza el perfil completo (User + Residential + Gamification)
+     */
     const syncUserProfile = useCallback(async () => {
         try {
-            const profile = await residentialApi.getProfile();
-            if (profile) {
-                setUserProfile(prev => {
-                    const updated = {
-                        ...prev,
-                        type: 'residential',
-                        config: profile,
-                        residential_profile: profile
-                    };
-                    return updated;
-                });
+            // 1. Fetch Full User Data (me)
+            const userData = await authApi.getMe();
+
+            if (userData) {
+                // Update User Profile with backend data
+                setUserProfile(prev => ({
+                    ...prev,
+                    name: userData.full_name || userData.username,
+                    email: userData.email,
+                    phone: userData.phone,
+                    type: userData.user_type,
+                    // If Residential Profile exists
+                    ...(userData.residential_profile && {
+                        location: userData.residential_profile.city,
+                        config: userData.residential_profile,
+                        residential_profile: userData.residential_profile
+                    }),
+                    // If Gamification Profile exists
+                    ...(userData.gamification_profile && {
+                        level: userData.gamification_profile.current_level,
+                        xp: userData.gamification_profile.total_xp,
+                        ecoPoints: userData.gamification_profile.eco_points,
+                        streak: userData.gamification_profile.streak
+                        // Note: xpToNext is separate, usually calculated or returned. 
+                        // If not in profile, keep default or fetch from stats.
+                    })
+                }));
             }
         } catch (error) {
-            console.error("Error al sincronizar perfil residencial:", error);
+            console.error("Error al sincronizar perfil completo:", error);
         }
     }, []);
 
@@ -70,7 +94,8 @@ export const UserProvider = ({ children }) => {
                 progress: um.progress * 100,
                 maxProgress: 100,
                 status: um.status === 'completed' ? 'completed' : (um.progress >= 1 ? 'claimable' : 'active'),
-                missionType: um.mission.mission_type
+                missionType: um.mission.mission_type,
+                related_appliance_type: um.mission.related_appliance_type
             }));
             setMissions(formattedMissions);
 
@@ -90,14 +115,22 @@ export const UserProvider = ({ children }) => {
         }
     }, []);
 
+    // Initial Fetch on Mount
+    useEffect(() => {
+        if (authApi.isAuthenticated()) {
+            syncUserProfile();
+            syncGamification(true);
+        }
+    }, [syncUserProfile, syncGamification]);
+
     const claimMission = useCallback(async (missionId) => {
         try {
-            await gamificationApi.completeMission(missionId);
+            const result = await gamificationApi.completeMission(missionId);
             await syncGamification(true);
-            return true;
+            return result;
         } catch (error) {
             console.error("Error al reclamar misión:", error);
-            return false;
+            return null;
         }
     }, [syncGamification]);
 
@@ -120,6 +153,7 @@ export const UserProvider = ({ children }) => {
 
         // 2. Limpiar persistencia local específica del contexto
         localStorage.removeItem('eccoIA_userProfile');
+        sessionStorage.removeItem('hasSeenInsightAlert'); // Resetear alerta de insight para próxima sesión
 
         // 3. Limpiar tokens de autenticación
         authApi.logout();
