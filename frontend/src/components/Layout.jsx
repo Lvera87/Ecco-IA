@@ -9,7 +9,6 @@ const Layout = ({ children }) => {
 
   const industrialRoutes = [
     '/industrial-dashboard',
-    '/global-consumption',
     '/carbon-footprint-industrial',
     '/industrial-settings',
   ];

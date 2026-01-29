@@ -35,6 +35,26 @@ const SECTOR_NAMES = {
   17: "Otras Actividades de Servicios",
 };
 
+const SECTOR_AVERAGES = {
+  1: 1603915, // Minas y Canteras
+  2: 173723,  // Suministro Electricidad/Gas
+  3: 502228,  // Distribución de Agua
+  4: 229845,  // Industrias Manufactureras
+  5: 204954,  // Salud y Asistencia Social
+  6: 50515,   // Construcción
+  7: 83736,   // Alojamiento y Comida
+  8: 78315,   // Comercio al por Mayor/Menor
+  9: 67853,   // Información y Comunicaciones
+  10: 57194,  // Educación
+  11: 21866,  // Actividades Financieras
+  12: 23493,  // Servicios Administrativos
+  13: 50305,  // Actividades Profesionales/Cient.
+  14: 501662, // Inmobiliarias
+  15: 289557, // Admin. Pública y Defensa
+  16: 18516,  // Arte y Entretenimiento
+  17: 93892,  // Otras Actividades de Servicios
+};
+
 const IndustrialDashboard = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -105,7 +125,7 @@ const IndustrialDashboard = () => {
           sector_id: currentConfig.sector_id,
           consumo_total: currentConfig.consumo_total,
           area_m2: currentConfig.area_m2,
-          tarifa_kwh: 850
+          tarifa_kwh: 479.12
         });
         if (isMounted) setPrediction(result);
       } catch (err) {
@@ -196,7 +216,7 @@ const IndustrialDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-6 lg:p-8">
-      <div className="max-w-7xl">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -240,7 +260,8 @@ const IndustrialDashboard = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-400 uppercase tracking-wide">Factura Estimada</p>
-                <p className="text-2xl font-bold text-white">$ {prediction?.factura_estimada_cop?.toLocaleString()} <span className="text-sm text-slate-500">COP</span></p>
+                <p className="text-2xl font-bold text-white">$ {prediction?.factura_estimada_cop?.toLocaleString(undefined, { maximumFractionDigits: 0 })} <span className="text-sm text-slate-500">COP</span></p>
+                <p className="text-xs text-slate-500 mt-1">Tarifa: $ 479,12 / kWh</p>
               </div>
             </div>
           </Card>
@@ -307,30 +328,47 @@ const IndustrialDashboard = () => {
             </div>
           </Card>
 
-          {/* Gráfico de Barras */}
+          {/* Gráfico de Comparación con Sector */}
           <Card className="p-6 bg-slate-900/50 border-slate-800">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Zap className="text-yellow-400" />
-              Consumo por Categoría (kWh)
+              <BarChart3 className="text-emerald-400" />
+              Tu Consumo vs. Promedio Sector
             </h3>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis type="number" stroke="#94a3b8" />
-                  <YAxis dataKey="name" type="category" stroke="#94a3b8" width={100} />
+                <BarChart
+                  data={[
+                    { name: 'Tu Planta', value: configData.consumo_total, fill: '#3B82F6' }, // Blue
+                    { name: 'Promedio Sector', value: SECTOR_AVERAGES[configData.sector_id] || 0, fill: '#64748b' } // Slate
+                  ]}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#ffffff', fontSize: 12, fontWeight: 500 }} />
+                  <YAxis stroke="#94a3b8" tick={{ fill: '#ffffff', fontSize: 12 }} tickFormatter={(value) => `${value / 1000}k`} />
                   <Tooltip
+                    cursor={{ fill: '#1e293b' }}
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#ffffff' }}
+                    itemStyle={{ color: '#ffffff' }}
+                    labelStyle={{ color: '#94a3b8' }}
                     formatter={(value) => [`${value.toLocaleString()} kWh`, 'Consumo']}
-                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                   />
-                  <Bar dataKey="kWh" radius={[0, 4, 4, 0]}>
-                    {barData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={60}>
+                    {
+                      [
+                        { name: 'Tu Planta', value: configData.consumo_total, fill: '#3B82F6' },
+                        { name: 'Promedio Sector', value: SECTOR_AVERAGES[configData.sector_id] || 0, fill: '#64748b' }
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))
+                    }
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <p className="text-center text-sm text-slate-400 mt-4">
+              Comparativa mensual con empresas del sector <span className="text-emerald-400 font-semibold">{SECTOR_NAMES[configData.sector_id]}</span>
+            </p>
           </Card>
         </div>
 
@@ -350,7 +388,7 @@ const IndustrialDashboard = () => {
               <tbody>
                 {pieData.map((item, index) => {
                   const percentage = totalDesglose > 0 ? (item.value / totalDesglose * 100) : 0;
-                  const cost = item.value * 850;
+                  const cost = item.value * 479.12;
                   return (
                     <tr key={item.name} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
                       <td className="py-4 px-4">
@@ -366,7 +404,10 @@ const IndustrialDashboard = () => {
                           {percentage.toFixed(1)}%
                         </span>
                       </td>
-                      <td className="text-right py-4 px-4 text-emerald-400 font-medium">$ {cost.toLocaleString()}</td>
+                      <td className="text-right py-4 px-4 text-emerald-400 font-medium">
+                        $ {cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <div className="text-[10px] text-slate-500 font-normal">($ 479,12 / kWh)</div>
+                      </td>
                     </tr>
                   );
                 })}

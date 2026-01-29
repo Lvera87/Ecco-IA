@@ -272,6 +272,18 @@ async def predict_industrial(
         
         # 6. Generar recomendación basada en el desglose
         total_predicho = val_maquinaria + val_iluminacion + val_climatizacion + val_otros
+        
+        # NORMALIZACIÓN: Ajustar para que la suma sea EXACTAMENTE el consumo_total
+        if total_predicho > 0:
+            factor = payload.consumo_total / total_predicho
+            val_maquinaria *= factor
+            val_iluminacion *= factor
+            val_climatizacion *= factor
+            val_otros *= factor
+            
+            # Recalcular total predicho para validaciones posteriores (ahora será igual a consumo_total)
+            total_predicho = payload.consumo_total
+
         cat_mayor = max([
             ("Maquinaria/Producción", val_maquinaria),
             ("Iluminación", val_iluminacion),

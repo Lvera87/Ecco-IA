@@ -22,6 +22,7 @@ import UserProfile from './pages/UserProfile.jsx';
 import Layout from './components/Layout.jsx';
 import IndustrialOnboarding from './pages/IndustrialOnboarding.jsx';
 import ResidentialAssistant from './pages/ResidentialAssistant.jsx';
+import CarbonFootprintIndustrial from './pages/CarbonFootprintIndustrial.jsx';
 
 function App() {
   return (
@@ -44,7 +45,7 @@ function App() {
             <Route path="/industrial-dashboard" element={<IndustrialDashboard />} />
             <Route path="/industrial-settings" element={<IndustrialSettings />} />
             <Route path="/industrial-config" element={<IndustrialConfig />} />
-            <Route path="/global-consumption" element={<GlobalConsumption />} />
+            <Route path="/carbon-footprint-industrial" element={<CarbonFootprintIndustrial />} />
             <Route path="/data-assistant" element={<DataAssistant />} />
             <Route path="/residential-assistant" element={<ResidentialAssistant />} />
             <Route path="/results-dashboard" element={<ResultsDashboard />} />

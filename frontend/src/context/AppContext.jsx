@@ -39,6 +39,21 @@ const AppContextWrapper = ({ children }) => {
         unreadNotificationsCount
     } = useUI();
 
+    // Chat State (Eco Assistant)
+    const [chatHistory, setChatHistory] = React.useState([
+        { id: 'welcome', role: 'assistant', content: '¡Hola! Soy tu Asistente Eco Industrial. ¿En qué puedo ayudarte hoy a optimizar tu planta?' }
+    ]);
+
+    const addChatMessage = (message) => {
+        setChatHistory(prev => [...prev, message]);
+    };
+
+    const clearChat = () => {
+        setChatHistory([
+            { id: 'welcome', role: 'assistant', content: '¡Hola! Soy tu Asistente Eco Industrial. ¿En qué puedo ayudarte hoy a optimizar tu planta?' }
+        ]);
+    };
+
     const value = {
         // User Domain
         userProfile, setUserProfile, missions, claimMission, addXP,
@@ -55,7 +70,10 @@ const AppContextWrapper = ({ children }) => {
         unreadNotificationsCount,
 
         // Common
-        iconMap
+        iconMap,
+
+        // Chat Domain
+        chatHistory, addChatMessage, clearChat
     };
 
     return (
