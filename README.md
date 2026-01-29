@@ -1,8 +1,6 @@
-# Boilerplate FastAPI + React + Vite + SQLAlchemy# Boilerplate FastAPI + React
-
+# Ecco-IA - Plataforma de Inteligencia Artificial
  
-
-Un boilerplate moderno y completo para iniciar proyectos full-stack con **FastAPI** (backend) y **React + Vite** (frontend). Incluye toda la configuración necesaria para desarrollo ágil, testing, linting, CI/CD y deployment.Un punto de partida moderno que combina **FastAPI** en el backend y **React + Vite** en el frontend.
+Un sistema inteligente para gestión energética y optimización de recursos, construido con **FastAPI** y **React + Vite**.
 
 Incluye configuración de pruebas, linters, gestión de entornos y scripts para acelerar el desarrollo.
 
@@ -73,9 +71,10 @@ pip install -r requirements.txt
 
 # Clonar el repositorio.venv\Scripts\alembic upgrade head
 
-git clone https://github.com/Lvera87/Boilerplate-Fastapi-React-Vite-SQLalchemy.git# Iniciar servidor de desarrollo
+# Clonar el repositorio
+git clone https://github.com/Lvera87/Ecco-IA.git
 
-cd Boilerplate-Fastapi-React-Vite-SQLalchemyuvicorn app.main:app --reload
+cd Ecco-IAuvicorn app.main:app --reload
 
 ```
 
@@ -219,9 +218,9 @@ npm install
 
 comando para iniciar el servidor de desarrollo del backend en Windows PowerShell:
 
-# Crear archivo de configuración
-
-cp .env.example .envcd "D:\Trabajo\Boilerplate FastApi y React\backend"
+cd backend
+# O la ruta completa si es necesario:
+# cd "C:\ruta\al\proyecto\backend"
 
 . .\.venv\Scripts\Activate.ps1
 
@@ -233,7 +232,8 @@ npm run dev
 
 
 
-La aplicación se abrirá en **http://localhost:5173**.cd "D:\Trabajo\Boilerplate FastApi y React\frontend"
+La aplicación se abrirá en **http://localhost:5173**.
+cd frontend
 
 npm run dev
 
